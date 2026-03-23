@@ -1,4 +1,4 @@
-import { createOpenAI, type OpenAIProvider } from "@ai-sdk/openai"
+import { createOpenAI } from "@ai-sdk/openai"
 import type { LanguageModel } from "ai"
 
 class ModelConfig {
@@ -6,14 +6,14 @@ class ModelConfig {
   private apiKey = 'ollama'
   public model: LanguageModel
   public contextWindow = 32768
-  private modelKey = "qwen2.5-coder:7b-instruct"
+  private modelKey = "llama3.1:8b"
 
   constructor() {
     const init = createOpenAI({
       baseURL: this.url,
-      apiKey: this.apiKey
+      apiKey: this.apiKey,
     })
-    this.model = init(this.modelKey)
+    this.model = init.chat(this.modelKey)
   }
 }
 
