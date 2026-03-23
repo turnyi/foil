@@ -1,0 +1,20 @@
+{
+  "name": "foil",
+  "module": "index.ts",
+  "type": "module",
+  "scripts": {
+    "dev": "bun --watch run src/index.ts"
+  },
+  "devDependencies": {
+    "@types/bun": "latest"
+  },
+  "peerDependencies": {
+    "typescript": "^5"
+  },
+  "dependencies": {
+    "@ai-sdk/mcp": "^1.0.30",
+    "@modelcontextprotocol/sdk": "^1.27.1",
+    "ai": "^6.0.136",
+    "zod": "^4.3.6"
+  }
+}
