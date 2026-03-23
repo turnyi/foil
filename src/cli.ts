@@ -1,24 +1,17 @@
 import { createInterface } from 'readline'
 import ModelConfig from './configs/ai/modelConfig'
-import ToolsConfig from './configs/ai/toolsConfig'
+import ToolsConfig from './configs/ai/tools/toolsConfig'
 import PromptMessageHandler from './prompt/promptMessageHandler'
 
 class Cli {
   private handler: PromptMessageHandler
-  private toolsConfig: ToolsConfig
   private rl: ReturnType<typeof createInterface>
 
-  private constructor(handler: PromptMessageHandler, toolsConfig: ToolsConfig) {
-    this.handler = handler
-    this.toolsConfig = toolsConfig
-    this.rl = createInterface({ input: process.stdin, output: process.stdout })
-  }
-
-  public static async create(): Promise<Cli> {
+  constructor() {
     const modelConfig = new ModelConfig()
-    const toolsConfig = await ToolsConfig.create()
-    const handler = new PromptMessageHandler(modelConfig.model, modelConfig.contextWindow, toolsConfig.tools)
-    return new Cli(handler, toolsConfig)
+    const toolsConfig = new ToolsConfig()
+    this.handler = new PromptMessageHandler(modelConfig.model, modelConfig.contextWindow, toolsConfig.tools)
+    this.rl = createInterface({ input: process.stdin, output: process.stdout })
   }
 
   private prompt(): Promise<string> {
@@ -26,8 +19,6 @@ class Cli {
   }
 
   public async start() {
-    process.on('exit', () => this.toolsConfig.close())
-
     while (true) {
       const input = (await this.prompt()).trim()
       if (!input) continue

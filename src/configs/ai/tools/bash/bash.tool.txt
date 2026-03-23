@@ -1,0 +1,22 @@
+Executes a shell command with optional timeout, working directory, and proper output capture.
+
+All commands run in ${directory} by default. Use the `workdir` parameter if you need to run a command in a different directory. AVOID using `cd <directory> && <command>` patterns - use `workdir` instead.
+
+Usage notes:
+- The command argument is required.
+- Always provide a clear, concise description of what the command does in 5-10 words.
+- You can specify an optional timeout in milliseconds. Defaults to 120000ms (2 minutes).
+- Output exceeding ${maxBytes} bytes will be truncated.
+- Always quote file paths that contain spaces with double quotes.
+
+When issuing multiple commands:
+- If independent, chain with '&&' in a single call.
+- If sequential and dependent, use a single Bash call with '&&'.
+- Use ';' only when you don't care if earlier commands fail.
+- DO NOT use newlines to separate commands.
+
+# Git safety rules
+- NEVER run destructive git commands (push --force, reset --hard) unless explicitly asked.
+- NEVER skip hooks (--no-verify) unless explicitly asked.
+- NEVER commit unless the user explicitly asks.
+- Only create commits when requested.

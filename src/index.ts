@@ -1,4 +1,4 @@
 import Cli from './cli'
 
-const cli = await Cli.create()
+const cli = new Cli()
 cli.start()

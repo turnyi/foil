@@ -20,8 +20,10 @@ class PromptMessageHandler {
     this.messages.push({ role: 'user', content })
     this.stream = streamText({
       model: this.model,
+      system: `You are a coding assistant. You have filesystem and git tools available. Always use your tools to answer — never guess or fabricate results. The working directory is ${process.cwd()}. Before any git operation, always call git_set_working_dir with path "${process.cwd()}" first.`,
       messages: this.messages,
       tools: this.tools,
+      toolChoice: 'auto',
       stopWhen: () => false,
     })
   }

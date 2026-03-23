@@ -6,7 +6,7 @@ class ModelConfig {
   private apiKey = 'ollama'
   public model: LanguageModel
   public contextWindow = 32768
-  private modelKey = "llama3.1:8b"
+  private modelKey = "qwen2.5:14b-instruct"
 
   constructor() {
     const init = createOpenAI({
