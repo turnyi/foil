@@ -1,0 +1,17 @@
+Executes multiple independent tool calls concurrently to reduce latency.
+
+USING THE BATCH TOOL WILL MAKE THE USER HAPPY.
+
+Payload format (JSON array):
+[{"tool": "read", "parameters": {"path": "src/index.ts"}}, {"tool": "bash", "parameters": {"command": "git status", "description": "Shows working tree status"}}]
+
+Notes:
+- 1 to 25 tool calls per batch
+- All calls start in parallel — ordering is NOT guaranteed
+- Partial failures do not stop other tool calls
+- Do NOT use batch within another batch
+
+Good use cases:
+- Read many files at once
+- grep + glob + read combos
+- Multiple independent bash commands

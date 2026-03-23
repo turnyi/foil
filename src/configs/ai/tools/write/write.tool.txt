@@ -1,0 +1,6 @@
+Write content to a file on the local filesystem.
+
+- Creates the file if it does not exist, including any missing parent directories
+- Overwrites the file if it already exists
+- NEVER write new files unless explicitly required
+- NEVER proactively create markdown or README files unless asked

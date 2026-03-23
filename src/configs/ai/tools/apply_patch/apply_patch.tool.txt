@@ -1,0 +1,20 @@
+Apply a patch to create, update, move, or delete files.
+
+Patch format:
+*** Begin Patch
+*** Add File: path/to/new/file.ts
++line to add
++another line
+*** Update File: path/to/existing/file.ts
+*** Move to: path/to/new/location.ts
+@@ context line near the change
+-line to remove
++line to add
+*** Delete File: path/to/remove.ts
+*** End Patch
+
+Rules:
+- Each @@ block provides context to locate the change position
+- Lines starting with - are removed, + are added, unmarked lines are context
+- Move to: is optional on Update File sections
+- Use this for multi-file changes in one operation

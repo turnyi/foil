@@ -1,0 +1,11 @@
+Manage a todo list for tracking tasks in the current session.
+
+Use TodoWrite to create or update tasks. Use TodoRead to check current tasks.
+
+Task states: pending, in_progress, completed, cancelled.
+
+Rules:
+- Only one task should be in_progress at a time
+- Mark tasks completed as soon as they are done
+- Use this to track multi-step work so nothing is forgotten
+- Read the todo list at the start of complex tasks and before marking work done

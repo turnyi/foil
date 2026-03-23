@@ -1,0 +1,7 @@
+Read a file from the local filesystem.
+
+- Returns up to 2000 lines from the beginning by default
+- Use offset and limit to read specific sections of large files
+- Lines are prefixed with line numbers: `<line>: <content>`
+- Binary files are not supported
+- Images are returned as base64 attachments

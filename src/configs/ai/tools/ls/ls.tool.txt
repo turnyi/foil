@@ -1,0 +1,6 @@
+Lists files and directories as a tree structure.
+
+- Ignores common directories: node_modules, .git, dist, build, .next, out
+- Limited to 100 files
+- Prefer Glob and Grep when you know which directories to search
+- Use this for an overview of a project's structure

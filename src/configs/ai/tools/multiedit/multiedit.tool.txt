@@ -1,0 +1,6 @@
+Makes multiple sequential edits to a single file in one operation.
+
+- Edits are applied in order — earlier edits affect the content seen by later ones
+- Each edit must uniquely identify its target string
+- You MUST read the file first before editing
+- Use this instead of multiple separate edit calls on the same file

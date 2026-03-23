@@ -6,7 +6,7 @@ class ModelConfig {
   private apiKey = 'ollama'
   public model: LanguageModel
   public contextWindow = 32768
-  private modelKey = "qwen2.5:14b-instruct"
+  private modelKey = "qwen3.5:cloud"
 
   constructor() {
     const init = createOpenAI({

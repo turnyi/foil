@@ -1,0 +1,7 @@
+Performs an exact string replacement in a file.
+
+- You MUST read the file first before editing
+- The edit will FAIL if oldString is not found in the file
+- The edit will FAIL if oldString appears more than once — provide more context to make it unique
+- Use replaceAll to replace every occurrence of a string across the file
+- Prefer editing existing files over creating new ones

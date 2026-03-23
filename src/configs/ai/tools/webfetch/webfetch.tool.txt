@@ -1,0 +1,7 @@
+Fetches content from a URL and returns it as text or markdown.
+
+- Format options: "markdown" (default) or "text"
+- Maximum response size: 5MB
+- Timeout: 30 seconds
+- Read-only — does not submit forms or trigger side effects
+- Results may be truncated if very large

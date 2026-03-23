@@ -1,0 +1,7 @@
+Search file contents using ripgrep.
+
+- Supports full regex syntax (e.g. "log.*Error", "function\s+\w+")
+- Filter files with the include glob parameter (e.g. "*.ts", "src/**/*.tsx")
+- Returns file path, line number, and matching line content
+- Results sorted by file modification time, limited to 100 matches
+- Use this instead of bash grep for content searches
