@@ -1,0 +1,5 @@
+Search for code examples and context using Exa Code Search.
+
+- Finds relevant code snippets and documentation for programming tasks
+- Adjustable token count between 1000 and 50000 (default 5000)
+- Requires EXA_API_KEY environment variable

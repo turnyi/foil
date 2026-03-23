@@ -9,7 +9,7 @@ class Cli {
 
   constructor() {
     const modelConfig = new ModelConfig()
-    const toolsConfig = new ToolsConfig()
+    const toolsConfig = new ToolsConfig(modelConfig.model)
     this.handler = new PromptMessageHandler(modelConfig.model, modelConfig.contextWindow, toolsConfig.tools)
     this.rl = createInterface({ input: process.stdin, output: process.stdout })
   }

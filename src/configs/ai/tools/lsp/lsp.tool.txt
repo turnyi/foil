@@ -1,0 +1,17 @@
+Interact with a Language Server Protocol (LSP) server for code intelligence.
+
+Supported operations:
+- goToDefinition: Find where a symbol is defined
+- findReferences: Find all usages of a symbol
+- hover: Get type info and documentation at a position
+- documentSymbol: List all symbols in a file
+- workspaceSymbol: Search for symbols across the workspace
+- goToImplementation: Find implementations of an interface or abstract method
+- diagnostics: Get errors and warnings for a file
+
+Parameters:
+- operation: one of the above
+- file: absolute path to the file
+- line: 1-indexed line number (for position-based operations)
+- character: 1-indexed character offset (for position-based operations)
+- query: symbol name (for workspaceSymbol)

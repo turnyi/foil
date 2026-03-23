@@ -1,0 +1,11 @@
+Write a structured plan before implementing a complex task.
+
+Use this when the task involves multiple files, architectural decisions, or unclear requirements.
+
+The plan should include:
+- What needs to be done and why
+- Which files will be created or modified
+- The order of operations
+- Any risks or trade-offs
+
+Do NOT use this for simple single-file changes or when the user wants immediate implementation.

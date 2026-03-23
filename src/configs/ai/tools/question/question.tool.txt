@@ -1,0 +1,5 @@
+Ask the user a question and wait for their response.
+
+Use this when you need clarification before proceeding — ambiguous requirements, choosing between options, or confirming a destructive action.
+
+Do NOT use this to ask questions you can answer yourself by reading files or running commands.

@@ -1,6 +1,7 @@
 import { tool } from "ai"
-import type { ToolSet } from "ai"
+import type { LanguageModel, ToolSet } from "ai"
 import type ITool from "./ITool"
+
 import bashTool from "./bash/bash.tool"
 import readTool from "./read/read.tool"
 import writeTool from "./write/write.tool"
@@ -11,28 +12,38 @@ import grepTool from "./grep/grep.tool"
 import lsTool from "./ls/ls.tool"
 import webfetchTool from "./webfetch/webfetch.tool"
 import { todoWriteTool, todoReadTool } from "./todo/todo.tool"
+import applyPatchTool from "./apply_patch/apply_patch.tool"
+import codesearchTool from "./codesearch/codesearch.tool"
+import websearchTool from "./websearch/websearch.tool"
+import lspTool from "./lsp/lsp.tool"
+import questionTool from "./question/question.tool"
+import planTool from "./plan/plan.tool"
+import taskTool, { configureTaskTool } from "./task/task.tool"
+import { createBatchTool } from "./batch/batch.tool"
 
 class ToolsConfig {
   public tools: ToolSet
 
-  constructor() {
-    const allTools: ITool[] = [
-      bashTool,
-      readTool,
-      writeTool,
-      editTool,
-      multieditTool,
-      globTool,
-      grepTool,
-      lsTool,
-      webfetchTool,
-      todoWriteTool,
-      todoReadTool,
+  constructor(model: LanguageModel) {
+    const base: ITool[] = [
+      bashTool, readTool, writeTool, editTool, multieditTool,
+      globTool, grepTool, lsTool, webfetchTool,
+      todoWriteTool, todoReadTool,
+      applyPatchTool, codesearchTool, websearchTool,
+      lspTool, questionTool, planTool, taskTool,
     ]
 
-    this.tools = Object.fromEntries(
-      allTools.map(t => [t.name, tool(t as any)])
+    const baseTools: ToolSet = Object.fromEntries(
+      base.map(t => [t.name, tool(t as any)])
     )
+
+    configureTaskTool(model, baseTools)
+
+    const batchTool = createBatchTool(baseTools)
+    this.tools = {
+      ...baseTools,
+      [batchTool.name]: tool(batchTool as any),
+    }
   }
 }
 

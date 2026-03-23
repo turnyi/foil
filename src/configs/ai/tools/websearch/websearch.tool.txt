@@ -1,0 +1,6 @@
+Search the web using Exa AI.
+
+- Returns relevant web results with titles, URLs, and content snippets
+- Supports live crawling: "fallback" (default) or "preferred"
+- Search types: "auto" (default), "fast", or "deep"
+- Requires EXA_API_KEY environment variable

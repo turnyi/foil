@@ -1,0 +1,7 @@
+Launch a subagent to handle a self-contained task autonomously.
+
+Use this for tasks that are independent and can run in parallel, or for delegating a well-scoped subtask with its own context.
+
+Provide a detailed prompt — the subagent has no context from the current conversation.
+
+Returns the subagent's final response when complete.
