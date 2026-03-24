@@ -7,4 +7,4 @@ interface ITool<TParams extends z.ZodType = z.ZodType> {
   execute: (params: any) => Promise<unknown>
 }
 
-export default ITool
+export type { ITool as default }

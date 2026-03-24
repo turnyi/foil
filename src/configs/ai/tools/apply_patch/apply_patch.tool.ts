@@ -20,14 +20,14 @@ function parsePatch(patchText: string): FileOp[] {
   let i = 0
 
   while (i < lines.length) {
-    const line = lines[i]
+    const line = lines[i]!
 
     if (line.startsWith("*** Add File: ")) {
       const path = line.slice("*** Add File: ".length).trim()
       const addLines: string[] = []
       i++
-      while (i < lines.length && !lines[i].startsWith("*** ")) {
-        if (lines[i].startsWith("+")) addLines.push(lines[i].slice(1))
+      while (i < lines.length && !lines[i]!.startsWith("*** ")) {
+        if (lines[i]!.startsWith("+")) addLines.push(lines[i]!.slice(1))
         i++
       }
       ops.push({ op: "add", path, lines: addLines })
@@ -46,21 +46,21 @@ function parsePatch(patchText: string): FileOp[] {
       i++
 
       if (lines[i]?.startsWith("*** Move to: ")) {
-        moveTo = lines[i].slice("*** Move to: ".length).trim()
+        moveTo = lines[i]!.slice("*** Move to: ".length).trim()
         i++
       }
 
       const hunks: { context: string; remove: string[]; add: string[] }[] = []
 
-      while (i < lines.length && !lines[i].startsWith("*** ")) {
-        if (lines[i].startsWith("@@")) {
-          const context = lines[i].slice(2).trim()
+      while (i < lines.length && !lines[i]!.startsWith("*** ")) {
+        if (lines[i]!.startsWith("@@")) {
+          const context = lines[i]!.slice(2).trim()
           i++
           const remove: string[] = []
           const add: string[] = []
-          while (i < lines.length && !lines[i].startsWith("@@") && !lines[i].startsWith("*** ")) {
-            if (lines[i].startsWith("-")) remove.push(lines[i].slice(1))
-            else if (lines[i].startsWith("+")) add.push(lines[i].slice(1))
+          while (i < lines.length && !lines[i]!.startsWith("@@") && !lines[i]!.startsWith("*** ")) {
+            if (lines[i]!.startsWith("-")) remove.push(lines[i]!.slice(1))
+            else if (lines[i]!.startsWith("+")) add.push(lines[i]!.slice(1))
             i++
           }
           hunks.push({ context, remove, add })

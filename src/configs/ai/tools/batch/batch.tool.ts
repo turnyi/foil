@@ -7,7 +7,7 @@ const description = await Bun.file(new URL("./batch.tool.txt", import.meta.url))
 const parameters = z.object({
   calls: z.array(z.object({
     tool: z.string().describe("Tool name"),
-    parameters: z.record(z.unknown()).describe("Tool parameters"),
+    parameters: z.record(z.string(), z.unknown()).describe("Tool parameters"),
   })).min(1).max(25).describe("List of tool calls to execute in parallel"),
 })
 
@@ -16,9 +16,9 @@ export function createBatchTool(tools: ToolSet): ITool<typeof parameters> {
     name: "batch",
     description,
     parameters,
-    execute: async ({ calls }) => {
+    execute: async ({ calls }: { calls: { tool: string; parameters: Record<string, unknown> }[] }) => {
       const results = await Promise.allSettled(
-        calls.map(async ({ tool, parameters: params }) => {
+        calls.map(async ({ tool, parameters: params }: { tool: string; parameters: Record<string, unknown> }) => {
           const t = tools[tool]
           if (!t) return { error: `Unknown tool: ${tool}` }
           return (t as any).execute(params)
@@ -27,8 +27,8 @@ export function createBatchTool(tools: ToolSet): ITool<typeof parameters> {
 
       return results.map((r, i) =>
         r.status === "fulfilled"
-          ? { tool: calls[i].tool, result: r.value }
-          : { tool: calls[i].tool, error: r.reason?.message ?? String(r.reason) }
+          ? { tool: calls[i]!.tool, result: r.value }
+          : { tool: calls[i]!.tool, error: r.reason?.message ?? String(r.reason) }
       )
     },
   }

@@ -17,7 +17,7 @@ const questionTool: ITool<typeof parameters> = {
     const rl = createInterface({ input: process.stdin, output: process.stdout })
 
     const prompt = options && options.length > 0
-      ? `\n[question] ${question}\n${options.map((o, i) => `  ${i + 1}. ${o}`).join("\n")}\nEnter number or type your answer: `
+      ? `\n[question] ${question}\n${options.map((o: string, i: number) => `  ${i + 1}. ${o}`).join("\n")}\nEnter number or type your answer: `
       : `\n[question] ${question}\nYour answer: `
 
     return new Promise((resolve) => {

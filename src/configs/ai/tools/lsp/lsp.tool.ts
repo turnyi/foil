@@ -70,7 +70,7 @@ async function lspRequest(
         const header = buffer.slice(0, headerEnd)
         const lengthMatch = header.match(/Content-Length: (\d+)/)
         if (!lengthMatch) break
-        const length = parseInt(lengthMatch[1])
+        const length = parseInt(lengthMatch[1]!)
         const bodyStart = headerEnd + 4
         if (buffer.length < bodyStart + length) break
         const body = buffer.slice(bodyStart, bodyStart + length)
@@ -141,7 +141,7 @@ const lspTool: ITool<typeof parameters> = {
       diagnostics: { method: "textDocument/diagnostic", params: { textDocument: { uri } } },
     }
 
-    const { method, params } = methodMap[operation]
+    const { method, params } = methodMap[operation]!
     const result = await lspRequest(server, process.cwd(), method, params)
     return { result }
   },

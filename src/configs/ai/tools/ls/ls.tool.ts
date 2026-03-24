@@ -23,7 +23,7 @@ async function buildTree(dir: string, prefix = "", count = { n: 0 }): Promise<st
   const lines: string[] = []
   for (let i = 0; i < entries.length; i++) {
     if (count.n >= MAX_FILES) break
-    const name = entries[i]
+    const name = entries[i]!
     if (IGNORE.has(name)) continue
 
     const isLast = i === entries.length - 1
