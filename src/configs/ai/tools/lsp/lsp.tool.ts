@@ -1,8 +1,7 @@
 import { z } from "zod"
-import type ITool from "../ITool"
+import BaseTool from "../BaseTool"
 import { lspManager } from "../../../../configs/lsp/lspManager"
-
-const description = await Bun.file(new URL("./lsp.tool.txt", import.meta.url)).text()
+import DESCRIPTION from "./lsp.tool.txt"
 
 const parameters = z.object({
   operation: z.enum([
@@ -20,20 +19,23 @@ const parameters = z.object({
   query: z.string().optional().describe("Symbol name for workspaceSymbol"),
 })
 
-const methodMap: Record<string, (uri: string, position: object, query?: string) => { method: string; params: object }> = {
-  goToDefinition:     (uri, position) => ({ method: "textDocument/definition",      params: { textDocument: { uri }, position } }),
-  findReferences:     (uri, position) => ({ method: "textDocument/references",       params: { textDocument: { uri }, position, context: { includeDeclaration: true } } }),
-  hover:              (uri, position) => ({ method: "textDocument/hover",            params: { textDocument: { uri }, position } }),
-  documentSymbol:     (uri)           => ({ method: "textDocument/documentSymbol",   params: { textDocument: { uri } } }),
-  workspaceSymbol:    (_u, _p, q)     => ({ method: "workspace/symbol",              params: { query: q ?? "" } }),
-  goToImplementation: (uri, position) => ({ method: "textDocument/implementation",  params: { textDocument: { uri }, position } }),
+type MethodEntry = (uri: string, position: object, query?: string) => { method: string; params: object }
+
+const methodMap: Record<string, MethodEntry> = {
+  goToDefinition:     (uri, position) => ({ method: "textDocument/definition",     params: { textDocument: { uri }, position } }),
+  findReferences:     (uri, position) => ({ method: "textDocument/references",      params: { textDocument: { uri }, position, context: { includeDeclaration: true } } }),
+  hover:              (uri, position) => ({ method: "textDocument/hover",           params: { textDocument: { uri }, position } }),
+  documentSymbol:     (uri)           => ({ method: "textDocument/documentSymbol",  params: { textDocument: { uri } } }),
+  workspaceSymbol:    (_u, _p, q)     => ({ method: "workspace/symbol",             params: { query: q ?? "" } }),
+  goToImplementation: (uri, position) => ({ method: "textDocument/implementation", params: { textDocument: { uri }, position } }),
 }
 
-const lspTool: ITool<typeof parameters> = {
-  name: "lsp",
-  description,
-  parameters,
-  execute: async ({ operation, file, line = 1, character = 1, query }) => {
+class LspTool extends BaseTool<typeof parameters> {
+  readonly name = "lsp"
+  readonly description = DESCRIPTION
+  readonly parameters = parameters
+
+  protected override async run({ operation, file, line = 1, character = 1, query }: z.infer<typeof parameters>) {
     if (operation === "diagnostics") {
       const diags = lspManager.getDiagnostics(file)
       const formatted = lspManager.formatDiagnostics(file, diags)
@@ -53,7 +55,7 @@ const lspTool: ITool<typeof parameters> = {
     } catch (e: any) {
       return { error: e.message ?? String(e) }
     }
-  },
+  }
 }
 
-export default lspTool
+export default new LspTool()

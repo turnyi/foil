@@ -1,6 +1,6 @@
 import { tool } from "ai"
 import type { LanguageModel, ToolSet } from "ai"
-import type ITool from "./ITool"
+import type BaseTool from "./BaseTool"
 
 import bashTool from "./bash/bash.tool"
 import readTool from "./read/read.tool"
@@ -18,14 +18,14 @@ import websearchTool from "./websearch/websearch.tool"
 import lspTool from "./lsp/lsp.tool"
 import questionTool from "./question/question.tool"
 import planTool from "./plan/plan.tool"
-import taskTool, { configureTaskTool } from "./task/task.tool"
+import taskTool from "./task/task.tool"
 import { createBatchTool } from "./batch/batch.tool"
 
 class ToolsConfig {
   public tools: ToolSet
 
   constructor(model: LanguageModel) {
-    const base: ITool[] = [
+    const base: BaseTool[] = [
       bashTool, readTool, writeTool, editTool, multieditTool,
       globTool, grepTool, lsTool, webfetchTool,
       todoWriteTool, todoReadTool,
@@ -37,7 +37,7 @@ class ToolsConfig {
       base.map(t => [t.name, tool(t as any)])
     )
 
-    configureTaskTool(model, baseTools)
+    taskTool.configure(model, baseTools)
 
     const batchTool = createBatchTool(baseTools)
     this.tools = {

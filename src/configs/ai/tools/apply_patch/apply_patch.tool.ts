@@ -1,9 +1,8 @@
 import { z } from "zod"
 import { mkdir } from "fs/promises"
 import { dirname } from "path"
-import type ITool from "../ITool"
-
-const description = await Bun.file(new URL("./apply_patch.tool.txt", import.meta.url)).text()
+import BaseTool from "../BaseTool"
+import DESCRIPTION from "./apply_patch.tool.txt"
 
 const parameters = z.object({
   patchText: z.string().describe("The full patch text starting with *** Begin Patch and ending with *** End Patch"),
@@ -14,81 +13,82 @@ type FileOp =
   | { op: "delete"; path: string }
   | { op: "update"; path: string; moveTo?: string; hunks: { context: string; remove: string[]; add: string[] }[] }
 
-function parsePatch(patchText: string): FileOp[] {
-  const lines = patchText.split("\n")
-  const ops: FileOp[] = []
-  let i = 0
+class ApplyPatchTool extends BaseTool<typeof parameters> {
+  readonly name = "apply_patch"
+  readonly description = DESCRIPTION
+  readonly parameters = parameters
 
-  while (i < lines.length) {
-    const line = lines[i]!
+  private parsePatch(patchText: string): FileOp[] {
+    const lines = patchText.split("\n")
+    const ops: FileOp[] = []
+    let i = 0
 
-    if (line.startsWith("*** Add File: ")) {
-      const path = line.slice("*** Add File: ".length).trim()
-      const addLines: string[] = []
-      i++
-      while (i < lines.length && !lines[i]!.startsWith("*** ")) {
-        if (lines[i]!.startsWith("+")) addLines.push(lines[i]!.slice(1))
+    while (i < lines.length) {
+      const line = lines[i]!
+
+      if (line.startsWith("*** Add File: ")) {
+        const path = line.slice("*** Add File: ".length).trim()
+        const addLines: string[] = []
         i++
-      }
-      ops.push({ op: "add", path, lines: addLines })
-      continue
-    }
-
-    if (line.startsWith("*** Delete File: ")) {
-      ops.push({ op: "delete", path: line.slice("*** Delete File: ".length).trim() })
-      i++
-      continue
-    }
-
-    if (line.startsWith("*** Update File: ")) {
-      const path = line.slice("*** Update File: ".length).trim()
-      let moveTo: string | undefined
-      i++
-
-      if (lines[i]?.startsWith("*** Move to: ")) {
-        moveTo = lines[i]!.slice("*** Move to: ".length).trim()
-        i++
-      }
-
-      const hunks: { context: string; remove: string[]; add: string[] }[] = []
-
-      while (i < lines.length && !lines[i]!.startsWith("*** ")) {
-        if (lines[i]!.startsWith("@@")) {
-          const context = lines[i]!.slice(2).trim()
-          i++
-          const remove: string[] = []
-          const add: string[] = []
-          while (i < lines.length && !lines[i]!.startsWith("@@") && !lines[i]!.startsWith("*** ")) {
-            if (lines[i]!.startsWith("-")) remove.push(lines[i]!.slice(1))
-            else if (lines[i]!.startsWith("+")) add.push(lines[i]!.slice(1))
-            i++
-          }
-          hunks.push({ context, remove, add })
-        } else {
+        while (i < lines.length && !lines[i]!.startsWith("*** ")) {
+          if (lines[i]!.startsWith("+")) addLines.push(lines[i]!.slice(1))
           i++
         }
+        ops.push({ op: "add", path, lines: addLines })
+        continue
       }
 
-      ops.push({ op: "update", path, moveTo, hunks })
-      continue
+      if (line.startsWith("*** Delete File: ")) {
+        ops.push({ op: "delete", path: line.slice("*** Delete File: ".length).trim() })
+        i++
+        continue
+      }
+
+      if (line.startsWith("*** Update File: ")) {
+        const path = line.slice("*** Update File: ".length).trim()
+        let moveTo: string | undefined
+        i++
+
+        if (lines[i]?.startsWith("*** Move to: ")) {
+          moveTo = lines[i]!.slice("*** Move to: ".length).trim()
+          i++
+        }
+
+        const hunks: { context: string; remove: string[]; add: string[] }[] = []
+
+        while (i < lines.length && !lines[i]!.startsWith("*** ")) {
+          if (lines[i]!.startsWith("@@")) {
+            const context = lines[i]!.slice(2).trim()
+            i++
+            const remove: string[] = []
+            const add: string[] = []
+            while (i < lines.length && !lines[i]!.startsWith("@@") && !lines[i]!.startsWith("*** ")) {
+              if (lines[i]!.startsWith("-")) remove.push(lines[i]!.slice(1))
+              else if (lines[i]!.startsWith("+")) add.push(lines[i]!.slice(1))
+              i++
+            }
+            hunks.push({ context, remove, add })
+          } else {
+            i++
+          }
+        }
+
+        ops.push({ op: "update", path, moveTo, hunks })
+        continue
+      }
+
+      i++
     }
 
-    i++
+    return ops
   }
 
-  return ops
-}
-
-const applyPatchTool: ITool<typeof parameters> = {
-  name: "apply_patch",
-  description,
-  parameters,
-  execute: async ({ patchText }) => {
+  protected override async run({ patchText }: z.infer<typeof parameters>) {
     const start = patchText.indexOf("*** Begin Patch")
     const end = patchText.indexOf("*** End Patch")
     if (start === -1 || end === -1) throw new Error("Invalid patch: missing *** Begin Patch / *** End Patch markers")
 
-    const ops = parsePatch(patchText.slice(start + "*** Begin Patch".length, end))
+    const ops = this.parsePatch(patchText.slice(start + "*** Begin Patch".length, end))
     const results: string[] = []
 
     for (const op of ops) {
@@ -136,7 +136,7 @@ const applyPatchTool: ITool<typeof parameters> = {
     }
 
     return { results }
-  },
+  }
 }
 
-export default applyPatchTool
+export default new ApplyPatchTool()

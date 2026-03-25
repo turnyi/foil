@@ -1,8 +1,7 @@
 import { z } from "zod"
 import type { ToolSet } from "ai"
-import type ITool from "../ITool"
-
-const description = await Bun.file(new URL("./batch.tool.txt", import.meta.url)).text()
+import BaseTool from "../BaseTool"
+import DESCRIPTION from "./batch.tool.txt"
 
 const parameters = z.object({
   calls: z.array(z.object({
@@ -11,25 +10,32 @@ const parameters = z.object({
   })).min(1).max(25).describe("List of tool calls to execute in parallel"),
 })
 
-export function createBatchTool(tools: ToolSet): ITool<typeof parameters> {
-  return {
-    name: "batch",
-    description,
-    parameters,
-    execute: async ({ calls }: { calls: { tool: string; parameters: Record<string, unknown> }[] }) => {
-      const results = await Promise.allSettled(
-        calls.map(async ({ tool, parameters: params }: { tool: string; parameters: Record<string, unknown> }) => {
-          const t = tools[tool]
-          if (!t) return { error: `Unknown tool: ${tool}` }
-          return (t as any).execute(params)
-        })
-      )
+class BatchTool extends BaseTool<typeof parameters> {
+  readonly name = "batch"
+  readonly description = DESCRIPTION
+  readonly parameters = parameters
 
-      return results.map((r, i) =>
-        r.status === "fulfilled"
-          ? { tool: calls[i]!.tool, result: r.value }
-          : { tool: calls[i]!.tool, error: r.reason?.message ?? String(r.reason) }
-      )
-    },
+  constructor(private readonly tools: ToolSet) {
+    super()
   }
+
+  protected override async run({ calls }: z.infer<typeof parameters>) {
+    const results = await Promise.allSettled(
+      calls.map(async ({ tool, parameters: params }) => {
+        const t = this.tools[tool]
+        if (!t) return { error: `Unknown tool: ${tool}` }
+        return (t as any).execute(params)
+      })
+    )
+
+    return results.map((r, i) =>
+      r.status === "fulfilled"
+        ? { tool: calls[i]!.tool, result: r.value }
+        : { tool: calls[i]!.tool, error: r.reason?.message ?? String(r.reason) }
+    )
+  }
+}
+
+export function createBatchTool(tools: ToolSet): BatchTool {
+  return new BatchTool(tools)
 }

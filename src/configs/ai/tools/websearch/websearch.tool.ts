@@ -1,7 +1,6 @@
 import { z } from "zod"
-import type ITool from "../ITool"
-
-const description = await Bun.file(new URL("./websearch.tool.txt", import.meta.url)).text()
+import BaseTool from "../BaseTool"
+import DESCRIPTION from "./websearch.tool.txt"
 
 const parameters = z.object({
   query: z.string().describe("The search query"),
@@ -10,11 +9,12 @@ const parameters = z.object({
   type: z.enum(["auto", "fast", "deep"]).optional().default("auto").describe("Search type"),
 })
 
-const websearchTool: ITool<typeof parameters> = {
-  name: "websearch",
-  description,
-  parameters,
-  execute: async ({ query, numResults = 5, livecrawl = "fallback", type = "auto" }) => {
+class WebSearchTool extends BaseTool<typeof parameters> {
+  readonly name = "websearch"
+  readonly description = DESCRIPTION
+  readonly parameters = parameters
+
+  protected override async run({ query, numResults = 5, livecrawl = "fallback", type = "auto" }: z.infer<typeof parameters>) {
     const apiKey = process.env.EXA_API_KEY
     if (!apiKey) throw new Error("EXA_API_KEY environment variable is not set")
 
@@ -39,7 +39,7 @@ const websearchTool: ITool<typeof parameters> = {
     const data = await res.json() as any
     if (data.error) throw new Error(`Exa error: ${data.error.message}`)
     return data.result
-  },
+  }
 }
 
-export default websearchTool
+export default new WebSearchTool()

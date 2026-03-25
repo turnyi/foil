@@ -1,8 +1,7 @@
 import { z } from "zod"
-import type ITool from "../ITool"
+import BaseTool from "../BaseTool"
 import { lspManager } from "../../../../configs/lsp/lspManager"
-
-const description = await Bun.file(new URL("./edit.tool.txt", import.meta.url)).text()
+import DESCRIPTION from "./edit.tool.txt"
 
 const parameters = z.object({
   path: z.string().describe("Path to the file to edit"),
@@ -11,39 +10,39 @@ const parameters = z.object({
   replaceAll: z.boolean().optional().describe("Replace all occurrences, defaults to false"),
 })
 
-export async function applyEdit(
-  content: string,
-  oldString: string,
-  newString: string,
-  replaceAll = false,
-): Promise<string> {
-  if (replaceAll) return content.replaceAll(oldString, newString)
+class EditTool extends BaseTool<typeof parameters> {
+  readonly name = "edit"
+  readonly description = DESCRIPTION
+  readonly parameters = parameters
 
-  const count = content.split(oldString).length - 1
-  if (count === 0) throw new Error(`String not found in file: ${JSON.stringify(oldString)}`)
-  if (count > 1) throw new Error(`String found ${count} times — provide more context to make it unique`)
+  private applyEdit(content: string, oldString: string, newString: string, replaceAll = false): string {
+    if (replaceAll) return content.replaceAll(oldString, newString)
 
-  return content.replace(oldString, newString)
-}
+    const count = content.split(oldString).length - 1
+    if (count === 0) throw new Error(`String not found in file: ${JSON.stringify(oldString)}`)
+    if (count > 1) throw new Error(`String found ${count} times — provide more context to make it unique`)
 
-const editTool: ITool<typeof parameters> = {
-  name: "edit",
-  description,
-  parameters,
-  execute: async ({ path, oldString, newString, replaceAll = false }) => {
+    return content.replace(oldString, newString)
+  }
+
+  protected override async run({ path, oldString, newString, replaceAll = false }: z.infer<typeof parameters>) {
     const file = Bun.file(path)
     if (!await file.exists()) return { error: `File not found: ${path}` }
 
     const content = await file.text()
-    const updated = await applyEdit(content, oldString, newString, replaceAll)
+    const updated = this.applyEdit(content, oldString, newString, replaceAll)
     await Bun.write(path, updated)
+
+    return { success: true, path }
+  }
+
+  protected override async postExecute({ path }: z.infer<typeof parameters>, result: unknown) {
+    if (typeof result === 'object' && result !== null && 'error' in result) return result
 
     const diagnostics = await lspManager.touchFile(path)
     const issues = lspManager.formatDiagnostics(path, diagnostics)
-
-    console.log({ success: true, path, ...(issues ? { diagnostics: issues } : {}) })
-    return { success: true, path, ...(issues ? { diagnostics: issues } : {}) }
-  },
+    return { ...(result as object), ...(issues ? { diagnostics: issues } : {}) }
+  }
 }
 
-export default editTool
+export default new EditTool()

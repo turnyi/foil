@@ -1,34 +1,34 @@
 import { z } from "zod"
-import type ITool from "../ITool"
+import BaseTool from "../BaseTool"
 import type { LanguageModel, ToolSet } from "ai"
-
-const description = await Bun.file(new URL("./task.tool.txt", import.meta.url)).text()
+import DESCRIPTION from "./task.tool.txt"
 
 const parameters = z.object({
   prompt: z.string().describe("Detailed prompt for the subagent — include all necessary context"),
 })
 
-let _model: LanguageModel
-let _tools: ToolSet
+class TaskTool extends BaseTool<typeof parameters> {
+  readonly name = "task"
+  readonly description = DESCRIPTION
+  readonly parameters = parameters
 
-export function configureTaskTool(model: LanguageModel, tools: ToolSet) {
-  _model = model
-  _tools = tools
-}
+  private model: LanguageModel | null = null
+  private tools: ToolSet | null = null
 
-const taskTool: ITool<typeof parameters> = {
-  name: "task",
-  description,
-  parameters,
-  execute: async ({ prompt }) => {
-    if (!_model) throw new Error("Task tool not configured — call configureTaskTool first")
+  configure(model: LanguageModel, tools: ToolSet) {
+    this.model = model
+    this.tools = tools
+  }
+
+  protected override async run({ prompt }: z.infer<typeof parameters>) {
+    if (!this.model) throw new Error("Task tool not configured — call configure first")
 
     const { streamText } = await import("ai")
 
     const stream = streamText({
-      model: _model,
+      model: this.model,
       messages: [{ role: "user", content: prompt }],
-      tools: _tools,
+      tools: this.tools!,
       stopWhen: () => false,
     })
 
@@ -38,7 +38,13 @@ const taskTool: ITool<typeof parameters> = {
     }
 
     return { result: output }
-  },
+  }
+}
+
+const taskTool = new TaskTool()
+
+export function configureTaskTool(model: LanguageModel, tools: ToolSet) {
+  taskTool.configure(model, tools)
 }
 
 export default taskTool

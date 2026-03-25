@@ -1,10 +1,9 @@
 import { z } from "zod"
-import type ITool from "../ITool"
+import BaseTool from "../BaseTool"
+import DESCRIPTION from "./read.tool.txt"
 
 const MAX_LINES = 2000
 const MAX_BYTES = 50_000
-
-const description = await Bun.file(new URL("./read.tool.txt", import.meta.url)).text()
 
 const parameters = z.object({
   path: z.string().describe("Absolute or relative path to the file"),
@@ -12,13 +11,13 @@ const parameters = z.object({
   limit: z.number().optional().describe(`Max number of lines to read, defaults to ${MAX_LINES}`),
 })
 
-const readTool: ITool<typeof parameters> = {
-  name: "read",
-  description,
-  parameters,
-  execute: async ({ path, offset = 1, limit = MAX_LINES }) => {
-    const file = Bun.file(path)
+class ReadTool extends BaseTool<typeof parameters> {
+  readonly name = "read"
+  readonly description = DESCRIPTION
+  readonly parameters = parameters
 
+  protected override async run({ path, offset = 1, limit = MAX_LINES }: z.infer<typeof parameters>) {
+    const file = Bun.file(path)
     if (!await file.exists()) return { error: `File not found: ${path}` }
 
     const text = await file.text()
@@ -35,12 +34,8 @@ const readTool: ITool<typeof parameters> = {
       .map((line, i) => `${start + i + 1}: ${line}`)
       .join("\n")
 
-    return {
-      content,
-      totalLines: lines.length,
-      truncated,
-    }
-  },
+    return { content, totalLines: lines.length, truncated }
+  }
 }
 
-export default readTool
+export default new ReadTool()

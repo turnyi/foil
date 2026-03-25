@@ -67,16 +67,18 @@ class LSPManager {
     const localBin = resolve(root, "node_modules/.bin", config.command)
     const command = existsSync(localBin) ? localBin : config.command
 
-    let proc: ReturnType<typeof spawn>
-    try {
-      proc = spawn(command, config.args, {
-        cwd: root,
-        stdio: ["pipe", "pipe", "ignore"],
+    const proc = spawn(command, config.args, {
+      cwd: root,
+      stdio: ["pipe", "pipe", "ignore"],
+    })
+
+    await new Promise<void>((resolve, reject) => {
+      proc.once("spawn", resolve)
+      proc.once("error", (err) => {
+        this.broken.add(key)
+        reject(new Error(`Failed to spawn ${command}: ${err.message}`))
       })
-    } catch (e) {
-      this.broken.add(key)
-      throw new Error(`Failed to spawn ${command}: ${e}`)
-    }
+    })
 
     const connection = createMessageConnection(
       new StreamMessageReader(proc.stdout as any),

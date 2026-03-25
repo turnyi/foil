@@ -1,14 +1,10 @@
 import { z } from "zod"
 import { spawn } from "child_process"
-import type ITool from "../ITool"
+import BaseTool from "../BaseTool"
+import DESCRIPTION_TEMPLATE from "./bash.tool.txt"
 
 const MAX_OUTPUT_BYTES = 30_000
 const DEFAULT_TIMEOUT_MS = 2 * 60 * 1000
-
-const descriptionTemplate = await Bun.file(new URL("./bash.tool.txt", import.meta.url)).text()
-const description = descriptionTemplate
-  .replaceAll("${directory}", process.cwd())
-  .replaceAll("${maxBytes}", String(MAX_OUTPUT_BYTES))
 
 const parameters = z.object({
   command: z.string().describe("The command to execute"),
@@ -19,15 +15,17 @@ const parameters = z.object({
   workdir: z.string().optional().describe(`Working directory, defaults to ${process.cwd()}. Use this instead of cd.`),
 })
 
-const bashTool: ITool<typeof parameters> = {
-  name: "bash",
-  description,
-  parameters,
-  execute: async ({ command, timeout: timeoutMs = DEFAULT_TIMEOUT_MS, workdir }) => {
+class BashTool extends BaseTool<typeof parameters> {
+  readonly name = "bash"
+  readonly description = DESCRIPTION_TEMPLATE
+    .replaceAll("${directory}", process.cwd())
+    .replaceAll("${maxBytes}", String(MAX_OUTPUT_BYTES))
+  readonly parameters = parameters
+
+  protected override async run({ command, timeout: timeoutMs = DEFAULT_TIMEOUT_MS, workdir }: z.infer<typeof parameters>) {
     if (timeoutMs < 0) throw new Error(`Invalid timeout: ${timeoutMs}. Must be positive.`)
 
     const cwd = workdir ?? process.cwd()
-    const abort = new AbortController()
 
     const proc = spawn(command, {
       shell: true,
@@ -62,8 +60,6 @@ const bashTool: ITool<typeof parameters> = {
       kill()
     }, timeoutMs)
 
-    abort.signal.addEventListener("abort", kill, { once: true })
-
     const exitCode = await new Promise<number | null>((resolve, reject) => {
       proc.once("exit", (code) => {
         exited = true
@@ -79,17 +75,14 @@ const bashTool: ITool<typeof parameters> = {
 
     const notes: string[] = []
     if (timedOut) notes.push(`Command timed out after ${timeoutMs}ms`)
-
-    if (notes.length > 0) {
-      output += "\n\n<bash_metadata>\n" + notes.join("\n") + "\n</bash_metadata>"
-    }
+    if (notes.length > 0) output += "\n\n<bash_metadata>\n" + notes.join("\n") + "\n</bash_metadata>"
 
     const truncated = output.length > MAX_OUTPUT_BYTES
       ? output.slice(0, MAX_OUTPUT_BYTES) + "\n\n[output truncated]"
       : output
 
     return { output: truncated, exitCode, timedOut }
-  },
+  }
 }
 
-export default bashTool
+export default new BashTool()

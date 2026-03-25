@@ -1,19 +1,19 @@
 import { z } from "zod"
 import { stat } from "fs/promises"
-import type ITool from "../ITool"
-
-const description = await Bun.file(new URL("./glob.tool.txt", import.meta.url)).text()
+import BaseTool from "../BaseTool"
+import DESCRIPTION from "./glob.tool.txt"
 
 const parameters = z.object({
   pattern: z.string().describe('Glob pattern to match files, e.g. "**/*.ts" or "src/**/*.tsx"'),
   cwd: z.string().optional().describe("Directory to search in, defaults to current"),
 })
 
-const globTool: ITool<typeof parameters> = {
-  name: "glob",
-  description,
-  parameters,
-  execute: async ({ pattern, cwd = process.cwd() }) => {
+class GlobTool extends BaseTool<typeof parameters> {
+  readonly name = "glob"
+  readonly description = DESCRIPTION
+  readonly parameters = parameters
+
+  protected override async run({ pattern, cwd = process.cwd() }: z.infer<typeof parameters>) {
     const glob = new Bun.Glob(pattern)
     const files: { path: string; mtime: number }[] = []
 
@@ -28,7 +28,7 @@ const globTool: ITool<typeof parameters> = {
       .map(f => f.path)
 
     return { files: sorted, count: sorted.length }
-  },
+  }
 }
 
-export default globTool
+export default new GlobTool()

@@ -1,5 +1,6 @@
 import { z } from "zod"
-import type ITool from "../ITool"
+import BaseTool from "../BaseTool"
+import DESCRIPTION from "./todo.tool.txt"
 
 export type TodoStatus = "pending" | "in_progress" | "completed" | "cancelled"
 
@@ -10,8 +11,6 @@ export interface TodoItem {
 }
 
 const todos: TodoItem[] = []
-
-const description = await Bun.file(new URL("./todo.tool.txt", import.meta.url)).text()
 
 const todoItemSchema = z.object({
   id: z.string(),
@@ -25,20 +24,27 @@ const writeParameters = z.object({
 
 const readParameters = z.object({})
 
-export const todoWriteTool: ITool<typeof writeParameters> = {
-  name: "todowrite",
-  description,
-  parameters: writeParameters,
-  execute: async ({ todos: updated }) => {
+class TodoWriteTool extends BaseTool<typeof writeParameters> {
+  readonly name = "todowrite"
+  readonly description = DESCRIPTION
+  readonly parameters = writeParameters
+
+  protected override async run({ todos: updated }: z.infer<typeof writeParameters>) {
     todos.length = 0
     todos.push(...updated)
     return { todos }
-  },
+  }
 }
 
-export const todoReadTool: ITool<typeof readParameters> = {
-  name: "todoread",
-  description: "Read the current todo list for this session.",
-  parameters: readParameters,
-  execute: async () => ({ todos }),
+class TodoReadTool extends BaseTool<typeof readParameters> {
+  readonly name = "todoread"
+  readonly description = "Read the current todo list for this session."
+  readonly parameters = readParameters
+
+  protected override async run(_params: z.infer<typeof readParameters>) {
+    return { todos }
+  }
 }
+
+export const todoWriteTool = new TodoWriteTool()
+export const todoReadTool = new TodoReadTool()

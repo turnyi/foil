@@ -1,8 +1,7 @@
 import { z } from "zod"
 import { stat } from "fs/promises"
-import type ITool from "../ITool"
-
-const description = await Bun.file(new URL("./grep.tool.txt", import.meta.url)).text()
+import BaseTool from "../BaseTool"
+import DESCRIPTION from "./grep.tool.txt"
 
 const parameters = z.object({
   pattern: z.string().describe("Regex pattern to search for"),
@@ -10,11 +9,12 @@ const parameters = z.object({
   cwd: z.string().optional().describe("Directory to search in, defaults to current"),
 })
 
-const grepTool: ITool<typeof parameters> = {
-  name: "grep",
-  description,
-  parameters,
-  execute: async ({ pattern, include, cwd = process.cwd() }) => {
+class GrepTool extends BaseTool<typeof parameters> {
+  readonly name = "grep"
+  readonly description = DESCRIPTION
+  readonly parameters = parameters
+
+  protected override async run({ pattern, include, cwd = process.cwd() }: z.infer<typeof parameters>) {
     const args = ["-nH", "--hidden", "-e", pattern]
     if (include) args.push("--glob", include)
     args.push(".")
@@ -36,12 +36,9 @@ const grepTool: ITool<typeof parameters> = {
       matches.push({ file, line: lineNum, content, mtime: s?.mtimeMs ?? 0 })
     }
 
-    const sorted = matches
-      .sort((a, b) => b.mtime - a.mtime)
-      .slice(0, 100)
-
+    const sorted = matches.sort((a, b) => b.mtime - a.mtime).slice(0, 100)
     return { matches: sorted.map(({ file, line, content }) => ({ file, line, content })), count: sorted.length }
-  },
+  }
 }
 
-export default grepTool
+export default new GrepTool()
