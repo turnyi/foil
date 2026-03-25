@@ -1,4 +1,4 @@
-import Cli from './cli'
+import Cli from './ui/cli/cli'
 
 const cli = new Cli()
 cli.start()

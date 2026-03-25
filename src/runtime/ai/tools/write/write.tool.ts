@@ -2,7 +2,7 @@ import { z } from "zod"
 import { mkdir } from "fs/promises"
 import { dirname } from "path"
 import BaseTool from "../BaseTool"
-import { lspManager } from "../../../../configs/lsp/lspManager"
+import { lspManager } from "../../../../runtime/lsp/lspManager"
 import DESCRIPTION from "./write.tool.txt"
 
 const parameters = z.object({

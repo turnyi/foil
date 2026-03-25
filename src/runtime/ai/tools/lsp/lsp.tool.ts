@@ -1,6 +1,6 @@
 import { z } from "zod"
 import BaseTool from "../BaseTool"
-import { lspManager } from "../../../../configs/lsp/lspManager"
+import { lspManager } from "../../../../runtime/lsp/lspManager"
 import DESCRIPTION from "./lsp.tool.txt"
 
 const parameters = z.object({

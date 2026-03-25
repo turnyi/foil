@@ -1,17 +1,19 @@
 import { z } from "zod"
 import BaseTool from "../BaseTool"
-import { lspManager } from "../../../../configs/lsp/lspManager"
-import DESCRIPTION from "./edit.tool.txt"
+import { lspManager } from "../../../../runtime/lsp/lspManager"
+import DESCRIPTION from "./multiedit.tool.txt"
 
 const parameters = z.object({
   path: z.string().describe("Path to the file to edit"),
-  oldString: z.string().describe("The exact string to replace"),
-  newString: z.string().describe("The string to replace it with"),
-  replaceAll: z.boolean().optional().describe("Replace all occurrences, defaults to false"),
+  edits: z.array(z.object({
+    oldString: z.string().describe("The exact string to replace"),
+    newString: z.string().describe("The string to replace it with"),
+    replaceAll: z.boolean().optional().describe("Replace all occurrences, defaults to false"),
+  })).describe("List of edits to apply sequentially"),
 })
 
-class EditTool extends BaseTool<typeof parameters> {
-  readonly name = "edit"
+class MultiEditTool extends BaseTool<typeof parameters> {
+  readonly name = "multiedit"
   readonly description = DESCRIPTION
   readonly parameters = parameters
 
@@ -25,15 +27,17 @@ class EditTool extends BaseTool<typeof parameters> {
     return content.replace(oldString, newString)
   }
 
-  protected override async run({ path, oldString, newString, replaceAll = false }: z.infer<typeof parameters>) {
+  protected override async run({ path, edits }: z.infer<typeof parameters>) {
     const file = Bun.file(path)
     if (!await file.exists()) return { error: `File not found: ${path}` }
 
-    const content = await file.text()
-    const updated = this.applyEdit(content, oldString, newString, replaceAll)
-    await Bun.write(path, updated)
+    let content = await file.text()
+    for (const edit of edits) {
+      content = this.applyEdit(content, edit.oldString, edit.newString, edit.replaceAll ?? false)
+    }
+    await Bun.write(path, content)
 
-    return { success: true, path }
+    return { success: true, path, editsApplied: edits.length }
   }
 
   protected override async postExecute({ path }: z.infer<typeof parameters>, result: unknown) {
@@ -45,4 +49,4 @@ class EditTool extends BaseTool<typeof parameters> {
   }
 }
 
-export default new EditTool()
+export default new MultiEditTool()

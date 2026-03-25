@@ -1,8 +1,8 @@
 import { createInterface } from 'readline'
-import ModelConfig from './configs/ai/modelConfig'
-import ToolsConfig from './configs/ai/tools/toolsConfig'
-import PromptMessageHandler from './prompt/promptMessageHandler'
-import { lspManager } from './configs/lsp/lspManager'
+import ModelConfig from '../../runtime/ai/modelConfig'
+import ToolsConfig from '../../runtime/ai/tools/toolsConfig'
+import PromptMessageHandler from '../../runtime/prompt/promptMessageHandler'
+import { lspManager } from '../../runtime/lsp/lspManager'
 
 class Cli {
   private handler!: PromptMessageHandler
