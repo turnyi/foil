@@ -1,54 +1,21 @@
 import { createMessageConnection, StreamMessageReader, StreamMessageWriter } from "vscode-jsonrpc/node"
-import type { Diagnostic } from "vscode-languageserver-types"
 import { spawn } from "child_process"
 import { pathToFileURL, fileURLToPath } from "url"
 import { existsSync } from "fs"
-import { resolve, dirname, extname } from "path"
+import { resolve } from "path"
 import { EventEmitter } from "events"
 import { getServerForFile } from "./lspRegistry"
 import type { LSPServer } from "./lspRegistry"
+import type { Diagnostic } from "vscode-languageserver-types"
+import type { DiagnosticsEvent, LSPConnection } from "./types"
+import { findRoot } from "../../helpers/fileSystem"
+import { withTimeout } from "../../helpers/timeout"
 
-export type { Diagnostic }
 
 const DIAGNOSTICS_DEBOUNCE_MS = 150
 const DIAGNOSTICS_TIMEOUT_MS = 3_000
 const INITIALIZE_TIMEOUT_MS = 45_000
 
-function withTimeout<T>(promise: Promise<T>, ms: number): Promise<T> {
-  return Promise.race([
-    promise,
-    new Promise<never>((_, reject) =>
-      setTimeout(() => reject(new Error(`Timeout after ${ms}ms`)), ms)
-    ),
-  ])
-}
-
-async function findRoot(file: string, markers: string[]): Promise<string> {
-  let dir = extname(file) ? dirname(file) : file
-  while (true) {
-    for (const marker of markers) {
-      if (existsSync(resolve(dir, marker))) return dir
-    }
-    const parent = dirname(dir)
-    if (parent === dir) return process.cwd()
-    dir = parent
-  }
-}
-
-interface DiagnosticsEvent {
-  path: string
-  serverID: string
-}
-
-interface LSPConnection {
-  connection: ReturnType<typeof createMessageConnection>
-  diagnostics: Map<string, Diagnostic[]>
-  notify: {
-    open(input: { path: string }): Promise<void>
-  }
-  waitForDiagnostics(input: { path: string }): Promise<void>
-  shutdown(): void
-}
 
 class LSPManager {
   private clients = new Map<string, Promise<LSPConnection>>()
@@ -65,20 +32,31 @@ class LSPManager {
     const emitter = this.emitter
 
     const localBin = resolve(root, "node_modules/.bin", config.command)
-    const command = existsSync(localBin) ? localBin : config.command
+    console.debug({ localBin })
+    const resolvedCommand = existsSync(localBin) ? localBin : config.command
 
-    const proc = spawn(command, config.args, {
+    console.debug(`[lsp:debug] spawning: ${resolvedCommand} ${config.args.join(" ")}`)
+
+    const proc = spawn(resolvedCommand, config.args, {
       cwd: root,
-      stdio: ["pipe", "pipe", "ignore"],
+      stdio: ["pipe", "pipe", "pipe"],
+    })
+
+    proc.stderr?.on("data", (chunk: Buffer) => {
+      console.error(`[lsp:${config.name}] ${chunk.toString().trimEnd()}`)
     })
 
     await new Promise<void>((resolve, reject) => {
       proc.once("spawn", resolve)
       proc.once("error", (err) => {
         this.broken.add(key)
-        reject(new Error(`Failed to spawn ${command}: ${err.message}`))
+        reject(new Error(`Failed to spawn ${resolvedCommand}: ${err.message}`))
       })
     })
+
+    const initialization = typeof config.initialization === "function"
+      ? config.initialization(root)
+      : config.initialization ?? {}
 
     const connection = createMessageConnection(
       new StreamMessageReader(proc.stdout as any),
@@ -95,9 +73,9 @@ class LSPManager {
     })
 
     connection.onRequest("window/workDoneProgress/create", () => null)
-    connection.onRequest("workspace/configuration", () => [config.initialization ?? {}])
-    connection.onRequest("client/registerCapability", () => {})
-    connection.onRequest("client/unregisterCapability", () => {})
+    connection.onRequest("workspace/configuration", () => [initialization])
+    connection.onRequest("client/registerCapability", () => { })
+    connection.onRequest("client/unregisterCapability", () => { })
     connection.onRequest("workspace/workspaceFolders", () => [
       { name: "workspace", uri: pathToFileURL(root).href },
     ])
@@ -110,7 +88,7 @@ class LSPManager {
           rootUri: pathToFileURL(root).href,
           processId: proc.pid,
           workspaceFolders: [{ name: "workspace", uri: pathToFileURL(root).href }],
-          initializationOptions: config.initialization ?? {},
+          initializationOptions: initialization,
           capabilities: {
             window: { workDoneProgress: true },
             workspace: {
@@ -198,7 +176,7 @@ class LSPManager {
           }),
           DIAGNOSTICS_TIMEOUT_MS,
         )
-          .catch(() => {})
+          .catch(() => { })
           .finally(() => {
             if (debounceTimer) clearTimeout(debounceTimer)
             unsub?.()
@@ -235,7 +213,8 @@ class LSPManager {
 
     try {
       return await this.clients.get(key)!
-    } catch {
+    } catch (e) {
+      console.error(`[lsp] failed to start ${config.name}:`, e instanceof Error ? e.message : e)
       return null
     }
   }
@@ -243,9 +222,11 @@ class LSPManager {
   /** Call after writing a file — notifies LSP, waits for diagnostics, returns them. */
   async touchFile(filePath: string): Promise<Diagnostic[]> {
     const config = getServerForFile(filePath)
+    console.log({ config })
     if (!config) return []
 
     const client = await this.getClient(config, filePath)
+    console.log({ client })
     if (!client) return []
 
     await client.notify.open({ path: filePath })

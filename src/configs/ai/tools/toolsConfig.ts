@@ -34,7 +34,11 @@ class ToolsConfig {
     ]
 
     const baseTools: ToolSet = Object.fromEntries(
-      base.map(t => [t.name, tool(t as any)])
+      base.map(t => [t.name, tool({
+        description: t.description,
+        inputSchema: t.parameters,
+        execute: t.execute.bind(t)
+      })])
     )
 
     taskTool.configure(model, baseTools)

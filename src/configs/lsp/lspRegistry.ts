@@ -1,3 +1,6 @@
+import { existsSync } from "fs"
+import { resolve } from "path"
+
 export interface LSPServer {
   name: string
   languageId: string
@@ -5,81 +8,25 @@ export interface LSPServer {
   command: string
   args: string[]
   rootMarkers: string[]
-  initialization?: Record<string, unknown>
+  initialization?: Record<string, unknown> | ((root: string) => Record<string, unknown>)
 }
 
 export const lspRegistry: LSPServer[] = [
   {
     name: "typescript",
     languageId: "typescript",
-    extensions: [".ts", ".tsx", ".mts", ".cts"],
-    command: "typescript-language-server",
-    args: ["--stdio"],
-    rootMarkers: ["tsconfig.json", "package.json", "bun.lockb", "yarn.lock", "pnpm-lock.yaml"],
-  },
-  {
-    name: "javascript",
-    languageId: "javascript",
-    extensions: [".js", ".jsx", ".mjs", ".cjs"],
-    command: "typescript-language-server",
-    args: ["--stdio"],
-    rootMarkers: ["package.json", "bun.lockb", "yarn.lock", "pnpm-lock.yaml"],
-  },
-  {
-    name: "python",
-    languageId: "python",
-    extensions: [".py", ".pyw"],
-    command: "pylsp",
-    args: [],
-    rootMarkers: ["pyproject.toml", "setup.py", "setup.cfg", "requirements.txt"],
-  },
-  {
-    name: "go",
-    languageId: "go",
-    extensions: [".go"],
-    command: "gopls",
-    args: [],
-    rootMarkers: ["go.mod", "go.sum"],
-  },
-  {
-    name: "rust",
-    languageId: "rust",
-    extensions: [".rs"],
-    command: "rust-analyzer",
-    args: [],
-    rootMarkers: ["Cargo.toml", "Cargo.lock"],
-  },
-  {
-    name: "lua",
-    languageId: "lua",
-    extensions: [".lua"],
-    command: "lua-language-server",
-    args: [],
-    rootMarkers: [".luarc.json", "stylua.toml"],
-  },
-  {
-    name: "css",
-    languageId: "css",
-    extensions: [".css", ".scss", ".less", ".sass"],
-    command: "vscode-css-language-server",
-    args: ["--stdio"],
-    rootMarkers: ["package.json"],
-  },
-  {
-    name: "html",
-    languageId: "html",
-    extensions: [".html", ".htm"],
-    command: "vscode-html-language-server",
-    args: ["--stdio"],
-    rootMarkers: ["package.json"],
-  },
-  {
-    name: "json",
-    languageId: "json",
-    extensions: [".json", ".jsonc"],
-    command: "vscode-json-language-server",
-    args: ["--stdio"],
-    rootMarkers: ["package.json"],
+    extensions: [".ts", ".tsx", ".js", ".jsx", ".mjs", ".cjs", ".mts", ".cts"],
+    command: "bun",
+    args: ["x", "typescript-language-server", "--stdio"],
+    rootMarkers: ["package.json", "bun.lock", "bun.lockb", "pnpm-lock.yaml", "yarn.lock"],
+    initialization: (root: string) => {
+      const candidates = [
+        resolve(root, "node_modules/typescript/lib/tsserver.js"),
+        new URL("../../node_modules/typescript/lib/tsserver.js", import.meta.url).pathname,
+      ]
+      const tsserver = candidates.find(existsSync)
+      return tsserver ? { tsserver: { path: tsserver } } : {}
+    },
   },
 ]
 
