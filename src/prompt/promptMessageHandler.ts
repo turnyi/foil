@@ -82,6 +82,7 @@ class PromptMessageHandler {
         case StreamPartType.ToolInputStart:
           handlers.onToolInputStart?.((part as any).toolName)
           break
+        //TODO
         case StreamPartType.ToolInputDelta:
           handlers.onToolInputDelta?.((part as any).toolName, (part as any).inputTextDelta)
           break

@@ -2,6 +2,7 @@ import { z } from "zod"
 import { mkdir } from "fs/promises"
 import { dirname } from "path"
 import type ITool from "../ITool"
+import { lspManager } from "../../../../configs/lsp/lspManager"
 
 const description = await Bun.file(new URL("./write.tool.txt", import.meta.url)).text()
 
@@ -17,7 +18,10 @@ const writeTool: ITool<typeof parameters> = {
   execute: async ({ path, content }) => {
     await mkdir(dirname(path), { recursive: true })
     await Bun.write(path, content)
-    return { success: true, path }
+
+    const diagnostics = await lspManager.touchFile(path)
+    const issues = lspManager.formatDiagnostics(path, diagnostics)
+    return { success: true, path, ...(issues ? { diagnostics: issues } : {}) }
   },
 }
 

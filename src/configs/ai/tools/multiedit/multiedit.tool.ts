@@ -1,6 +1,7 @@
 import { z } from "zod"
 import type ITool from "../ITool"
 import { applyEdit } from "../edit/edit.tool"
+import { lspManager } from "../../../../configs/lsp/lspManager"
 
 const description = await Bun.file(new URL("./multiedit.tool.txt", import.meta.url)).text()
 
@@ -28,7 +29,10 @@ const multieditTool: ITool<typeof parameters> = {
     }
 
     await Bun.write(path, content)
-    return { success: true, path, editsApplied: edits.length }
+
+    const diagnostics = await lspManager.touchFile(path)
+    const issues = lspManager.formatDiagnostics(path, diagnostics)
+    return { success: true, path, editsApplied: edits.length, ...(issues ? { diagnostics: issues } : {}) }
   },
 }
 

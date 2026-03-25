@@ -2,16 +2,16 @@ import { createInterface } from 'readline'
 import ModelConfig from './configs/ai/modelConfig'
 import ToolsConfig from './configs/ai/tools/toolsConfig'
 import PromptMessageHandler from './prompt/promptMessageHandler'
+import { lspManager } from './configs/lsp/lspManager'
 
 class Cli {
-  private handler: PromptMessageHandler
+  private handler!: PromptMessageHandler
   private rl: ReturnType<typeof createInterface>
 
   constructor() {
-    const modelConfig = new ModelConfig()
-    const toolsConfig = new ToolsConfig(modelConfig.model)
-    this.handler = new PromptMessageHandler(modelConfig.model, modelConfig.contextWindow, toolsConfig.tools)
     this.rl = createInterface({ input: process.stdin, output: process.stdout })
+    process.on('exit', () => lspManager.shutdown())
+    process.on('SIGINT', () => { lspManager.shutdown(); process.exit(0) })
   }
 
   private prompt(): Promise<string> {
@@ -19,6 +19,10 @@ class Cli {
   }
 
   public async start() {
+    const modelConfig = new ModelConfig()
+    await modelConfig.loadContextWindow()
+    const toolsConfig = new ToolsConfig(modelConfig.model)
+    this.handler = new PromptMessageHandler(modelConfig.model, modelConfig.contextWindow, toolsConfig.tools)
     while (true) {
       const input = (await this.prompt()).trim()
       if (!input) continue

@@ -1,5 +1,6 @@
 import { z } from "zod"
 import type ITool from "../ITool"
+import { lspManager } from "../../../../configs/lsp/lspManager"
 
 const description = await Bun.file(new URL("./edit.tool.txt", import.meta.url)).text()
 
@@ -37,7 +38,11 @@ const editTool: ITool<typeof parameters> = {
     const updated = await applyEdit(content, oldString, newString, replaceAll)
     await Bun.write(path, updated)
 
-    return { success: true, path }
+    const diagnostics = await lspManager.touchFile(path)
+    const issues = lspManager.formatDiagnostics(path, diagnostics)
+
+    console.log({ success: true, path, ...(issues ? { diagnostics: issues } : {}) })
+    return { success: true, path, ...(issues ? { diagnostics: issues } : {}) }
   },
 }
 
