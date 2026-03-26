@@ -8,7 +8,7 @@ class PromptMessageHandler {
   private stream: StreamTextResult<ToolSet, TextOutput> | null = null
   private contextWindow?: number
   private messages: ModelMessage[] = []
-  private model: LanguageModel
+  public model: LanguageModel
   private tools: ToolSet
 
   constructor(model: LanguageModel, contextWindow: number | undefined, tools: ToolSet) {
