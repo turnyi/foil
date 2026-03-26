@@ -6,8 +6,8 @@ class ModelConfig {
   private url = 'http://localhost:11434/v1'
   private apiKey = 'ollama'
   public model: LanguageModel
-  public contextWindow = 32768
-  private modelKey = "qwen3.5:cloud"
+  public contextWindow?: number
+  private modelKey = "qwen3.5:35b-a3b-q4_K_M"
 
   constructor() {
     const init = createOpenAI({
@@ -29,8 +29,10 @@ class ModelConfig {
 
       const data = await res.json() as OllamaModelInfo
       const { model_info: modelInfo } = data
-      if (modelInfo["qwen3.5.context_length"])
-        this.contextWindow = modelInfo["qwen3.5.context_length"]
+      const entry = Object.entries(modelInfo).find(([key]) => key.includes('context_length'))
+      const contextWindow = entry?.[1]
+      if (contextWindow && Number.isFinite(contextWindow))
+        this.contextWindow = contextWindow
 
     } catch { }
   }

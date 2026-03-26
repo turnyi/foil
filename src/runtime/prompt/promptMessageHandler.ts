@@ -6,12 +6,12 @@ type TextOutput = ReturnType<typeof Output.text>
 
 class PromptMessageHandler {
   private stream: StreamTextResult<ToolSet, TextOutput> | null = null
-  private contextWindow: number
+  private contextWindow?: number
   private messages: ModelMessage[] = []
   private model: LanguageModel
   private tools: ToolSet
 
-  constructor(model: LanguageModel, contextWindow: number, tools: ToolSet) {
+  constructor(model: LanguageModel, contextWindow: number | undefined, tools: ToolSet) {
     this.model = model
     this.contextWindow = contextWindow
     this.tools = tools
@@ -113,7 +113,7 @@ class PromptMessageHandler {
 
     const [text, usage, response] = await Promise.all([this.stream.text, this.stream.totalUsage, this.stream.response])
     const consumedTokens = usage.totalTokens ?? (usage.inputTokens ?? 0) + (usage.outputTokens ?? 0)
-    const contextUsagePercent = Math.round((consumedTokens / this.contextWindow) * 10000) / 100
+    const contextUsagePercent = this.contextWindow ? Math.round((consumedTokens / this.contextWindow) * 10000) / 100 : "No context length info"
 
     this.messages.push(...response.messages)
 

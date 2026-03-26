@@ -32,7 +32,6 @@ class LSPManager {
     const emitter = this.emitter
 
     const localBin = resolve(root, "node_modules/.bin", config.command)
-    console.debug({ localBin })
     const resolvedCommand = existsSync(localBin) ? localBin : config.command
 
     console.debug(`[lsp:debug] spawning: ${resolvedCommand} ${config.args.join(" ")}`)
@@ -222,11 +221,9 @@ class LSPManager {
   /** Call after writing a file — notifies LSP, waits for diagnostics, returns them. */
   async touchFile(filePath: string): Promise<Diagnostic[]> {
     const config = getServerForFile(filePath)
-    console.log({ config })
     if (!config) return []
 
     const client = await this.getClient(config, filePath)
-    console.log({ client })
     if (!client) return []
 
     await client.notify.open({ path: filePath })

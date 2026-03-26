@@ -1,17 +1,13 @@
 import { createInterface } from 'readline'
-import ModelConfig from '../../runtime/ai/modelConfig'
-import ToolsConfig from '../../runtime/ai/tools/toolsConfig'
-import PromptMessageHandler from '../../runtime/prompt/promptMessageHandler'
-import { lspManager } from '../../runtime/lsp/lspManager'
+import Engine from '../../runtime/engine'
 
 class Cli {
-  private handler!: PromptMessageHandler
+  private engine: Engine
   private rl: ReturnType<typeof createInterface>
 
   constructor() {
+    this.engine = new Engine()
     this.rl = createInterface({ input: process.stdin, output: process.stdout })
-    process.on('exit', () => lspManager.shutdown())
-    process.on('SIGINT', () => { lspManager.shutdown(); process.exit(0) })
   }
 
   private prompt(): Promise<string> {
@@ -19,18 +15,16 @@ class Cli {
   }
 
   public async start() {
-    const modelConfig = new ModelConfig()
-    await modelConfig.loadContextWindow()
-    const toolsConfig = new ToolsConfig(modelConfig.model)
-    this.handler = new PromptMessageHandler(modelConfig.model, modelConfig.contextWindow, toolsConfig.tools)
+    await this.engine.initialize()
+
     while (true) {
       const input = (await this.prompt()).trim()
       if (!input) continue
 
-      this.handler.send(input)
+      this.engine.send(input)
 
       process.stdout.write('\n')
-      await this.handler.consume({
+      await this.engine.consume({
         onText: (text) => process.stdout.write(text),
         onToolCall: (toolName, args) => process.stdout.write(`\n[tool] ${toolName}(${JSON.stringify(args)})\n`),
         onToolResult: (toolName, result) => {
@@ -45,7 +39,7 @@ class Cli {
         },
       })
 
-      const { totalTokens, contextUsagePercent } = await this.handler.getResponse()
+      const { totalTokens, contextUsagePercent } = await this.engine.getUsage()
       process.stdout.write(`\n[tokens: ${totalTokens} | context: ${contextUsagePercent}%]\n\n`)
     }
   }
