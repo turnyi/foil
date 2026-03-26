@@ -1,5 +1,6 @@
 import { Box, Text } from 'ink'
 import type { ChatMessage } from '../types'
+import { Markdown } from './Markdown'
 
 const SPIN_FRAMES = ['⠋', '⠙', '⠹', '⠸', '⠼', '⠴', '⠦', '⠧', '⠇', '⠏']
 
@@ -13,7 +14,7 @@ export function Message({ message, spinFrame }: { message: ChatMessage; spinFram
       return (
         <Box marginBottom={1}>
           <Text color="gray">│ </Text>
-          <Text color="white">{message.text}</Text>
+          <Markdown text={message.text} />
         </Box>
       )
 
@@ -32,7 +33,7 @@ export function Message({ message, spinFrame }: { message: ChatMessage; spinFram
     case 'assistant':
       return (
         <Box marginBottom={message.streaming ? 0 : 1}>
-          <Text>{message.text}</Text>
+          <Markdown text={message.text} />
           {message.streaming && <SpinFrame frame={spinFrame} />}
         </Box>
       )
