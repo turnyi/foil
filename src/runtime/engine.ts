@@ -1,30 +1,19 @@
 import ModelConfig from './ai/modelConfig'
 import ToolsConfig from './ai/tools/toolsConfig'
-import PromptMessageHandler from './prompt/promptMessageHandler'
-import { lspManager } from './lsp/lspManager'
-import type { StreamHandlers } from './prompt/streamTypes'
-
-export interface TokenUsage {
-  totalTokens: number
-  contextUsagePercent?: number | string
-}
-
-export interface EngineStartResult {
-  success: boolean
-  message?: string
-  issue?: string
-}
+import PromptHandler from './ai/prompt/promptHandler'
+import MemorySession from './engine/session/memory.session'
+import mergeHandlers from './ai/prompt/mergeHandlers'
+import type ISessionEngine from './engine/session/isession.engine'
+import type { StreamHandlers } from './ai/types/streamTypes'
+import type { EngineConfig, AskResult, EngineStartResult } from './engine/types'
+import SYSTEM from './ai/prompt/system.txt'
 
 export class Engine {
-  private handler!: PromptMessageHandler
+  private handler!: PromptHandler
+  private session!: ISessionEngine
   readonly ready: Promise<EngineStartResult>
 
-  constructor() {
-    process.on('exit', () => lspManager.shutdown())
-    process.on('SIGINT', () => {
-      lspManager.shutdown()
-      process.exit(0)
-    })
+  constructor(private readonly config: EngineConfig = {}) {
     this.ready = this.initialize()
   }
 
@@ -32,12 +21,14 @@ export class Engine {
     try {
       const modelConfig = new ModelConfig()
       await modelConfig.loadContextWindow()
-      const toolsConfig = new ToolsConfig(modelConfig.model)
-      this.handler = new PromptMessageHandler(
-        modelConfig.model,
-        modelConfig.contextWindow,
-        toolsConfig.tools
-      )
+
+      const model = this.config.model ?? modelConfig.model
+      const tools = this.config.tools ?? new ToolsConfig(model).tools
+      const system = this.config.system ?? SYSTEM.replace('{cwd}', process.cwd())
+
+      this.handler = new PromptHandler(model, modelConfig.contextWindow, tools, system)
+      this.session = this.config.session ?? new MemorySession()
+
       return { success: true }
     }
     catch (e) {
@@ -50,17 +41,11 @@ export class Engine {
     }
   }
 
-  send(message: string): void {
-    this.handler.send(message)
-  }
-
-  async consume(handlers: StreamHandlers = {}): Promise<void> {
-    await this.handler.consume(handlers)
-  }
-
-  async getUsage(): Promise<TokenUsage> {
-    const { totalTokens, contextUsagePercent } = await this.handler.getResponse()
-    return { totalTokens, contextUsagePercent }
+  async ask(message: string, ...handlers: StreamHandlers[]): Promise<AskResult> {
+    const messages = await this.session.buildContext({ role: 'user', content: message })
+    const result = await this.handler.ask(messages, mergeHandlers(...handlers))
+    await this.session.appendResponse(result.messages)
+    return result
   }
 
   async getModel() {

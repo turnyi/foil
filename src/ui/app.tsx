@@ -1,7 +1,7 @@
 import { useCallback, useEffect, useRef, useState } from 'react'
 import { Box, Text, useApp, useInput } from 'ink'
 import { Engine } from '../runtime/engine'
-import type { TokenUsage } from '../runtime/engine'
+import type { TokenUsage } from '../runtime/engine/types'
 import type { ChatMessage } from './types'
 import { ChatPane } from './components/ChatPane'
 import { Sidebar } from './components/Sidebar'
@@ -64,9 +64,7 @@ export default function App() {
     let assistantId: string | null = null
 
     try {
-      engine.send(text)
-
-      await engine.consume({
+      const { messages: responseMessages, ...u } = await engine.ask(text, {
         onReasoningStart: () => {
           thinkingId = nextId()
           setMessages(prev => [...prev, { id: thinkingId!, type: 'thinking', text: '', streaming: true }])
@@ -132,8 +130,6 @@ export default function App() {
 
         onUnhandled: () => { },
       })
-
-      const u = await engine.getUsage()
       setUsage(u)
     } catch (err) {
       setMessages(prev => [...prev, { id: nextId(), type: 'error', text: String(err) }])

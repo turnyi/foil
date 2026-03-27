@@ -1,5 +1,5 @@
 import { Box, Text } from 'ink'
-import type { TokenUsage } from '../../runtime/engine'
+import type { TokenUsage } from '../../runtime/engine/types'
 
 interface Props {
   usage: TokenUsage

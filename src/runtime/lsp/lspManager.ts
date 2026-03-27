@@ -268,3 +268,9 @@ class LSPManager {
 }
 
 export const lspManager = new LSPManager()
+
+process.on('exit', () => lspManager.shutdown())
+process.on('SIGINT', () => {
+  lspManager.shutdown()
+  process.exit(0)
+})

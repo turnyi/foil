@@ -1,3 +1,7 @@
+import { Output } from "ai"
+
+export type TextOutput = ReturnType<typeof Output.text>
+
 export enum StreamPartType {
   Start = 'start',
   Finish = 'finish',
