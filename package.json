@@ -4,11 +4,15 @@
   "type": "module",
   "scripts": {
     "dev": "bun --watch run src/index.ts",
-    "build": "bun build src/index.ts --outdir dist --target bun"
+    "build": "bun build src/index.ts --outdir dist --target bun",
+    "db:generate": "bunx drizzle-kit generate --dialect sqlite --schema ./src/db/schema.ts",
+    "db:migrate": "bun run migrate.ts",
+    "db:push": "bunx drizzle-kit push --dialect sqlite"
   },
   "devDependencies": {
-    "@types/bun": "latest",
+    "@types/bun": "^1.3.11",
     "@types/react": "^19.2.14",
+    "drizzle-kit": "^0.31.10",
     "typescript": "^6.0.2"
   },
   "peerDependencies": {
@@ -20,6 +24,7 @@
     "ai": "^6.0.136",
     "ink": "^6.8.0",
     "react": "^19.2.4",
+    "react-devtools-core": "^7.0.1",
     "vscode-jsonrpc": "^8.2.1",
     "vscode-languageserver-types": "^3.17.5",
     "zod": "^4.3.6"

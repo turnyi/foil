@@ -130,7 +130,7 @@ export default function App() {
           setMessages(prev => [...prev, { id: nextId(), type: 'error', text: String(err) }])
         },
 
-        onUnhandled: () => {},
+        onUnhandled: () => { },
       })
 
       const u = await engine.getUsage()
@@ -190,9 +190,9 @@ export default function App() {
       <Box flexGrow={1} overflow="hidden">
         {showChat
           ? <>
-              <ChatPane messages={messages} isThinking={isThinking} spinFrame={spinFrame} />
-              <Sidebar usage={usage} modelId={modelId} sessionStart={sessionStart.current} />
-            </>
+            <ChatPane messages={messages} isThinking={isThinking} spinFrame={spinFrame} />
+            <Sidebar usage={usage} modelId={modelId} sessionStart={sessionStart.current} />
+          </>
           : <Welcome modelId={modelId} isReady={isReady} spinFrame={spinFrame} />
         }
       </Box>
