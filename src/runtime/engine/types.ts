@@ -1,4 +1,10 @@
 import type { LanguageModel, ModelMessage, ToolSet } from "ai"
+
+export interface SessionMetadata {
+  filesRead?: string[]
+  filesModified?: string[]
+  tags?: string[]
+}
 import type ISessionEngine from "./session/isession.engine"
 import type { MessageService } from "../services/MessageService"
 

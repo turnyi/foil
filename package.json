@@ -7,12 +7,20 @@
     "build": "bun build src/index.ts --outdir dist --target bun",
     "db:generate": "bunx drizzle-kit generate --dialect sqlite --schema ./src/db/schema.ts",
     "db:migrate": "bun run migrate.ts",
-    "db:push": "bunx drizzle-kit push --dialect sqlite"
+    "db:push": "bunx drizzle-kit push --dialect sqlite",
+    "lint": "bunx eslint src",
+    "format": "bunx prettier --write src"
   },
   "devDependencies": {
     "@types/bun": "^1.3.11",
     "@types/react": "^19.2.14",
+    "@typescript-eslint/eslint-plugin": "^8.57.2",
+    "@typescript-eslint/parser": "^8.57.2",
     "drizzle-kit": "^0.31.10",
+    "eslint": "^10.1.0",
+    "eslint-plugin-react": "^7.37.5",
+    "eslint-plugin-react-hooks": "^7.0.1",
+    "prettier": "^3.8.1",
     "typescript": "^6.0.2"
   },
   "peerDependencies": {

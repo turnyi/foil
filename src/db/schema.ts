@@ -3,6 +3,8 @@ import { sqliteTable, text, integer } from "drizzle-orm/sqlite-core";
 export const sessions = sqliteTable("sessions", {
   id: text("id").primaryKey(),
   name: text("name").notNull(),
+  summary: text("summary"),
+  metadata: text("metadata", { mode: "json" }).$type<Record<string, unknown>>(),
   modelId: text("model_id").notNull(),
   createdAt: integer("created_at", { mode: "timestamp" }).notNull(),
   updatedAt: integer("updated_at", { mode: "timestamp" }).notNull(),

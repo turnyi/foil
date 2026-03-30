@@ -1,6 +1,7 @@
 import type { ModelMessage } from "ai"
 import type { Session } from "../../../db/schema"
 import type ISessionEngine from "./isession.engine"
+import type { SessionMetadata } from "../types"
 
 export default class MemorySession implements ISessionEngine {
   private messages: ModelMessage[] = []
@@ -29,4 +30,7 @@ export default class MemorySession implements ISessionEngine {
   async loadSession(_session: Session, messages: ModelMessage[]): Promise<void> {
     this.messages = [...messages]
   }
+
+  async updateTitle(_name: string, _summary: string): Promise<void> { }
+  async updateMetadata(_patch: SessionMetadata): Promise<void> { }
 }

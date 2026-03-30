@@ -2,6 +2,7 @@ import type { ModelMessage } from "ai";
 import type { Session } from "../../../db/schema";
 import type { MessageService, SessionService } from "../../services";
 import type ISessionEngine from "./isession.engine";
+import type { SessionMetadata } from "../types";
 
 export default class MessageSession implements ISessionEngine {
   private sessionService: SessionService;
@@ -51,6 +52,23 @@ export default class MessageSession implements ISessionEngine {
   async loadSession(session: Session, messages: ModelMessage[]): Promise<void> {
     this.activeSession = session
     this.activeSessionMessages = messages
+  }
+
+  async updateTitle(name: string, summary: string): Promise<void> {
+    if (!this.activeSession) return
+    await this.sessionService.update(this.activeSession.id, { name, summary })
+  }
+
+  async updateMetadata(patch: SessionMetadata): Promise<void> {
+    if (!this.activeSession) return
+    const existing = (this.activeSession.metadata ?? {}) as SessionMetadata
+    const merged: SessionMetadata = {
+      filesRead: [...new Set([...(existing.filesRead ?? []), ...(patch.filesRead ?? [])])],
+      filesModified: [...new Set([...(existing.filesModified ?? []), ...(patch.filesModified ?? [])])],
+      tags: [...new Set([...(existing.tags ?? []), ...(patch.tags ?? [])])],
+    }
+    await this.sessionService.update(this.activeSession.id, { metadata: merged })
+    this.activeSession = { ...this.activeSession, metadata: merged }
   }
 
 }

@@ -31,9 +31,13 @@ export class SessionService {
 
   async update(
     id: string,
-    data: Partial<Pick<Session, "name" | "modelId">>,
+    data: Partial<Pick<Session, "name" | "modelId" | "summary" | "metadata">>,
   ): Promise<Session | null> {
     return this.repository.update(id, data);
+  }
+
+  async updateSummary(id: string, summary: string): Promise<void> {
+    await this.repository.update(id, { summary })
   }
 
   async delete(id: string): Promise<void> {
