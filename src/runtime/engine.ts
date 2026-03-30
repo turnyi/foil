@@ -4,6 +4,7 @@ import PromptHandler from './ai/prompt/promptHandler'
 import MemorySession from './engine/session/memory.session'
 import mergeHandlers from './ai/prompt/mergeHandlers'
 import type ISessionEngine from './engine/session/isession.engine'
+import type { Session } from '../db/schema'
 import type { StreamHandlers } from './ai/types/streamTypes'
 import type { EngineConfig, AskResult, EngineStartResult } from './engine/types'
 import SYSTEM from './ai/prompt/system.txt'
@@ -41,7 +42,28 @@ export class Engine {
     }
   }
 
+  async getSessions(): Promise<Session[]> {
+    return this.session.getSessions()
+  }
+
+  async loadSession(session: Session): Promise<ModelMessage[]> {
+    const messages = this.config.messageService
+      ? await this.config.messageService.getBySession(session.id)
+      : []
+    await this.session.loadSession(session, messages)
+    return messages
+  }
+
+  async createSession(name: string): Promise<Session> {
+    await this.ready
+    const modelId = (this.handler.model as any).modelId ?? 'unknown'
+    return this.session.createSession(name, modelId)
+  }
+
   async ask(message: string, ...handlers: StreamHandlers[]): Promise<AskResult> {
+    if (!this.session.hasActiveSession())
+      await this.createSession(new Date().toLocaleString())
+
     const messages = await this.session.buildContext({ role: 'user', content: message })
     const result = await this.handler.ask(messages, mergeHandlers(...handlers))
     await this.session.appendResponse(result.messages)

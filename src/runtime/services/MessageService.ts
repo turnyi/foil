@@ -6,7 +6,7 @@ import { randomUUID } from "crypto";
 export interface CreateMessageInput {
   sessionId: string;
   role: "user" | "assistant" | "tool" | "system";
-  content: string;
+  content: unknown;
   tokens?: number;
 }
 

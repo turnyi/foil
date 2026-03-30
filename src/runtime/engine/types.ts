@@ -1,11 +1,13 @@
 import type { LanguageModel, ModelMessage, ToolSet } from "ai"
 import type ISessionEngine from "./session/isession.engine"
+import type { MessageService } from "../services/MessageService"
 
 export interface EngineConfig {
   model?: LanguageModel
   tools?: ToolSet
   system?: string
   session?: ISessionEngine
+  messageService?: MessageService
 }
 
 export interface TokenUsage {

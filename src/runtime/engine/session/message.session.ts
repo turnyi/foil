@@ -14,12 +14,16 @@ export default class MessageSession implements ISessionEngine {
     this.messageService = messageService
   }
 
+  hasActiveSession(): boolean {
+    return !!this.activeSession
+  }
+
   async buildContext(promptMessage: ModelMessage): Promise<ModelMessage[]> {
     if (!this.activeSession) throw new Error('No active session. Call loadSession() first.')
     if (!this.activeSessionMessages)
       this.activeSessionMessages = []
     this.activeSessionMessages.push(promptMessage)
-    await this.messageService.create({ sessionId: this.activeSession.id, role: promptMessage.role, content: promptMessage.content.toString() })
+    await this.messageService.create({ sessionId: this.activeSession.id, role: promptMessage.role, content: promptMessage.content })
     return this.activeSessionMessages
   }
 
@@ -29,12 +33,19 @@ export default class MessageSession implements ISessionEngine {
       this.activeSessionMessages = []
     for (const msg of messages) {
       this.activeSessionMessages.push(msg)
-      await this.messageService.create({ sessionId: this.activeSession.id, role: msg.role, content: msg.content.toString() })
+      await this.messageService.create({ sessionId: this.activeSession.id, role: msg.role, content: msg.content })
     }
   }
 
+  async getSessions(): Promise<Session[]> {
+    return this.sessionService.getAll()
+  }
+
   async createSession(sessionName: string, modelId: string): Promise<Session> {
-    return await this.sessionService.create({ name: sessionName, modelId })
+    const session = await this.sessionService.create({ name: sessionName, modelId })
+    this.activeSession = session
+    this.activeSessionMessages = []
+    return session
   }
 
   async loadSession(session: Session, messages: ModelMessage[]): Promise<void> {

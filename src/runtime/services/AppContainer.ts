@@ -1,4 +1,4 @@
-import { RepositoryContainer, repositoryContainer } from "../db/repositories";
+import { RepositoryContainer, repositoryContainer } from "../../db/repositories";
 import { ServiceContainer } from "./ServiceContainer";
 
 export class AppContainer {

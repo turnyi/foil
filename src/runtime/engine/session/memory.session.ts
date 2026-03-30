@@ -5,6 +5,10 @@ import type ISessionEngine from "./isession.engine"
 export default class MemorySession implements ISessionEngine {
   private messages: ModelMessage[] = []
 
+  hasActiveSession(): boolean {
+    return true
+  }
+
   async buildContext(promptMessage: ModelMessage): Promise<ModelMessage[]> {
     this.messages.push(promptMessage)
     return this.messages
@@ -12,6 +16,10 @@ export default class MemorySession implements ISessionEngine {
 
   async appendResponse(messages: ModelMessage[]): Promise<void> {
     this.messages.push(...messages)
+  }
+
+  async getSessions(): Promise<Session[]> {
+    return []
   }
 
   async createSession(_sessionName: string, _modelId: string): Promise<Session> {
