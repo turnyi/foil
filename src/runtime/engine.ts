@@ -92,7 +92,11 @@ export class Engine {
     const result = await this.handler.ask(messages, mergeHandlers(new FileTracker(this.session, this.log).getHandlers(), ...handlers))
     this.log.debug('Response received', { totalTokens: result.totalTokens })
 
-    await Promise.all([this.session.appendResponse(result.messages), titlePromise])
+    await Promise.all([
+      this.session.appendResponse(result.messages),
+      this.session.accumulateTokens(result.totalTokens ?? 0),
+      titlePromise,
+    ])
 
     return result
   }
@@ -111,6 +115,14 @@ export class Engine {
     ])
     this.log.info('Title generated', { name: name.trim() })
     await this.session.updateTitle(name.trim(), summary.trim())
+  }
+
+  getCurrentSession() {
+    return this.session.getActiveSession()
+  }
+
+  getContextWindow(): number | undefined {
+    return this.handler?.contextWindow
   }
 
   async getModel() {

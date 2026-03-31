@@ -10,6 +10,10 @@ export default class MemorySession implements ISessionEngine {
     return true
   }
 
+  getActiveSession(): Session | undefined {
+    return undefined
+  }
+
   async buildContext(promptMessage: ModelMessage): Promise<ModelMessage[]> {
     this.messages.push(promptMessage)
     return this.messages
@@ -33,4 +37,5 @@ export default class MemorySession implements ISessionEngine {
 
   async updateTitle(_name: string, _summary: string): Promise<void> { }
   async updateMetadata(_patch: SessionMetadata): Promise<void> { }
+  async accumulateTokens(_tokens: number): Promise<void> { }
 }

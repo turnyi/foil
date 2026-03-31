@@ -12,7 +12,7 @@ import { Welcome } from './components/Welcome'
 export default function App() {
   const { exit } = useApp()
   const { state: engineState, engine, start: startEngine } = useEngineContext()
-  const { messages, isThinking, usage, send, reset } = useChat()
+  const { messages, isThinking, currentSession, sessionTokens, contextWindow, send, reset } = useChat()
   const [input, setInput] = useState('')
   const [spinFrame, setSpinFrame] = useState(0)
   const [showSessionPicker, setShowSessionPicker] = useState(false)
@@ -79,7 +79,7 @@ export default function App() {
         {showChat
           ? <>
             <ChatPane messages={messages} isThinking={isThinking} spinFrame={spinFrame} />
-            <Sidebar usage={usage} modelId={modelId} sessionStart={sessionStart.current} />
+            <Sidebar sessionTokens={sessionTokens} contextWindow={contextWindow} currentSession={currentSession} modelId={modelId} sessionStart={sessionStart.current} />
           </>
           : <Welcome modelId={modelId} isReady={isReady} spinFrame={spinFrame} />
         }
@@ -91,7 +91,7 @@ export default function App() {
           engine={engine}
           onSelect={async session => {
             const loaded = await engine.loadSession(session)
-            reset(loaded)
+            reset(loaded, session)
             setShowSessionPicker(false)
           }}
           onClose={() => setShowSessionPicker(false)}

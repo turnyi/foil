@@ -7,7 +7,7 @@ import type { ILogger } from "../../../helpers/logger"
 import streamPartHandlers from "./streamPartHandlers"
 
 class PromptHandler {
-  private contextWindow?: number
+  public contextWindow?: number
   public model: LanguageModel
   private tools: ToolSet
   private system: string

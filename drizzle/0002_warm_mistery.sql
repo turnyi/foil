@@ -1,1 +1,0 @@
-ALTER TABLE `sessions` ADD `total_tokens` integer DEFAULT 0 NOT NULL;

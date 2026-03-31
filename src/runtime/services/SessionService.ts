@@ -40,7 +40,7 @@ export class SessionService {
 
   async update(
     id: string,
-    data: Partial<Pick<Session, "name" | "modelId" | "summary" | "metadata">>,
+    data: Partial<Pick<Session, "name" | "modelId" | "summary" | "metadata" | "totalTokens">>,
   ): Promise<Session | null> {
     this.log.debug('Updating session', { id, fields: Object.keys(data) })
     return this.repository.update(id, data);
@@ -48,6 +48,14 @@ export class SessionService {
 
   async updateSummary(id: string, summary: string): Promise<void> {
     await this.repository.update(id, { summary })
+  }
+
+  async accumulateTokens(id: string, tokens: number): Promise<void> {
+    const session = await this.repository.getById(id)
+    if (!session) return
+    const totalTokens = (session.totalTokens ?? 0) + tokens
+    this.log.debug('Accumulating tokens', { id, added: tokens, total: totalTokens })
+    await this.repository.update(id, { totalTokens })
   }
 
   async delete(id: string): Promise<void> {

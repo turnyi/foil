@@ -23,6 +23,10 @@ export default class MessageSession implements ISessionEngine {
     return !!this.activeSession
   }
 
+  getActiveSession(): Session | undefined {
+    return this.activeSession
+  }
+
   async buildContext(promptMessage: ModelMessage): Promise<ModelMessage[]> {
     if (!this.activeSession) throw new Error('No active session. Call loadSession() first.')
     if (!this.activeSessionMessages)
@@ -67,6 +71,14 @@ export default class MessageSession implements ISessionEngine {
     if (!this.activeSession) return
     this.log.info('Updating title', { name })
     await this.sessionService.update(this.activeSession.id, { name, summary })
+    this.activeSession = { ...this.activeSession, name, summary }
+  }
+
+  async accumulateTokens(tokens: number): Promise<void> {
+    if (!this.activeSession) return
+    const totalTokens = (this.activeSession.totalTokens ?? 0) + tokens
+    await this.sessionService.accumulateTokens(this.activeSession.id, tokens)
+    this.activeSession = { ...this.activeSession, totalTokens }
   }
 
   async updateMetadata(patch: SessionMetadata): Promise<void> {
