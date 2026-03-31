@@ -1,4 +1,5 @@
 import type { LanguageModel, ModelMessage, ToolSet } from "ai"
+import type { Logger } from "../../helpers/logger"
 
 export interface SessionMetadata {
   filesRead?: string[]
@@ -14,6 +15,7 @@ export interface EngineConfig {
   system?: string
   session?: ISessionEngine
   messageService?: MessageService
+  logger?: Logger
 }
 
 export interface TokenUsage {

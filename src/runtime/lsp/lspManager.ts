@@ -4,10 +4,12 @@ import { pathToFileURL, fileURLToPath } from "url"
 import { existsSync } from "fs"
 import { resolve } from "path"
 import { EventEmitter } from "events"
+import { Logger, ConsoleTransport } from "../../helpers/logger"
 import { getServerForFile } from "./lspRegistry"
 import type { LSPServer } from "./lspRegistry"
 import type { Diagnostic } from "vscode-languageserver-types"
 import type { DiagnosticsEvent, LSPConnection } from "./types"
+import type { ILogger } from "../../helpers/logger"
 import { findRoot } from "../../helpers/fileSystem"
 import { withTimeout } from "../../helpers/timeout"
 
@@ -22,6 +24,11 @@ class LSPManager {
   private resolvedClients = new Map<string, LSPConnection>()
   private broken = new Set<string>()
   private emitter = new EventEmitter()
+  private log: ILogger = new Logger('LSPManager', [new ConsoleTransport()])
+
+  setLogger(logger: ILogger): void {
+    this.log = logger.child('LSPManager')
+  }
 
   private clientKey(serverName: string, root: string) {
     return `${serverName}@${root}`
@@ -34,7 +41,7 @@ class LSPManager {
     const localBin = resolve(root, "node_modules/.bin", config.command)
     const resolvedCommand = existsSync(localBin) ? localBin : config.command
 
-    console.debug(`[lsp:debug] spawning: ${resolvedCommand} ${config.args.join(" ")}`)
+    this.log.debug(`Spawning ${config.name}`, { command: resolvedCommand, args: config.args, root })
 
     const proc = spawn(resolvedCommand, config.args, {
       cwd: root,
@@ -42,13 +49,17 @@ class LSPManager {
     })
 
     proc.stderr?.on("data", (chunk: Buffer) => {
-      console.error(`[lsp:${config.name}] ${chunk.toString().trimEnd()}`)
+      this.log.warn(`[${config.name}] ${chunk.toString().trimEnd()}`)
     })
 
     await new Promise<void>((resolve, reject) => {
-      proc.once("spawn", resolve)
+      proc.once("spawn", () => {
+        this.log.info(`Spawned ${config.name}`, { pid: proc.pid, root })
+        resolve()
+      })
       proc.once("error", (err) => {
         this.broken.add(key)
+        this.log.error(`Failed to spawn ${config.name}`, { command: resolvedCommand, error: err.message })
         reject(new Error(`Failed to spawn ${resolvedCommand}: ${err.message}`))
       })
     })
@@ -81,6 +92,7 @@ class LSPManager {
 
     connection.listen()
 
+    this.log.debug(`Initializing ${config.name}`)
     try {
       await withTimeout(
         connection.sendRequest("initialize", {
@@ -106,9 +118,11 @@ class LSPManager {
       this.broken.add(key)
       proc.kill()
       connection.dispose()
+      this.log.error(`Initialize failed for ${config.name}`, { error: String(e) })
       throw new Error(`LSP initialize failed for ${config.command}: ${e}`)
     }
 
+    this.log.info(`${config.name} ready`, { root })
     await connection.sendNotification("initialized", {})
 
     if (config.initialization) {
@@ -119,7 +133,8 @@ class LSPManager {
 
     const files: Record<string, number> = {}
 
-    proc.on("exit", () => {
+    proc.on("exit", (code) => {
+      this.log.warn(`${config.name} exited`, { key, code })
       this.clients.delete(key)
       this.resolvedClients.delete(key)
     })
@@ -213,7 +228,7 @@ class LSPManager {
     try {
       return await this.clients.get(key)!
     } catch (e) {
-      console.error(`[lsp] failed to start ${config.name}:`, e instanceof Error ? e.message : e)
+      this.log.error(`Failed to start ${config.name}`, { error: e instanceof Error ? e.message : String(e) })
       return null
     }
   }
@@ -226,9 +241,15 @@ class LSPManager {
     const client = await this.getClient(config, filePath)
     if (!client) return []
 
+    this.log.debug('Touching file', { filePath, server: config.name })
     await client.notify.open({ path: filePath })
     await client.waitForDiagnostics({ path: filePath })
-    return client.diagnostics.get(filePath) ?? []
+    const diags = client.diagnostics.get(filePath) ?? []
+    if (diags.length > 0)
+      this.log.warn('Diagnostics found', { filePath, count: diags.length })
+    else
+      this.log.debug('No diagnostics', { filePath })
+    return diags
   }
 
   /** Get last known diagnostics synchronously (no server roundtrip). */
@@ -259,6 +280,7 @@ class LSPManager {
   }
 
   shutdown(): void {
+    this.log.info('Shutting down', { clients: this.resolvedClients.size })
     for (const client of this.resolvedClients.values()) {
       client.shutdown()
     }

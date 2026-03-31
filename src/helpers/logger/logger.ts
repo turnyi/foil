@@ -1,7 +1,7 @@
 import { LEVELS } from './constants'
-import type { LogTransport, LogLevel } from './types'
+import type { LogTransport, LogLevel, ILogger } from './types'
 
-export class Logger {
+export class Logger implements ILogger {
   constructor(
     private readonly className: string,
     private readonly transports: LogTransport[],

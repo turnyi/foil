@@ -1,7 +1,9 @@
+import { Logger, ConsoleTransport } from "../../helpers/logger";
+import { randomUUID } from "crypto";
 import type { MessageRepository } from "../../db/repositories/MessageRepository";
 import type { Message } from "../../db/schema";
 import type { ModelMessage } from "ai";
-import { randomUUID } from "crypto";
+import type { ILogger } from "../../helpers/logger";
 
 export interface CreateMessageInput {
   sessionId: string;
@@ -11,9 +13,14 @@ export interface CreateMessageInput {
 }
 
 export class MessageService {
-  constructor(private readonly repository: MessageRepository) { }
+  private readonly log: ILogger
+
+  constructor(private readonly repository: MessageRepository, logger?: ILogger) {
+    this.log = logger?.child('MessageService') ?? new Logger('MessageService', [new ConsoleTransport()])
+  }
 
   async create(input: CreateMessageInput): Promise<Message> {
+    this.log.debug('Persisting message', { sessionId: input.sessionId, role: input.role })
     return this.repository.create({
       id: randomUUID(),
       sessionId: input.sessionId,
@@ -32,14 +39,17 @@ export class MessageService {
 
   async getBySession(sessionId: string): Promise<ModelMessage[]> {
     const messages = await this.repository.getBySession(sessionId);
+    this.log.debug('Loaded messages for session', { sessionId, count: messages.length })
     return messages.map(this.convertToModelMessage);
   }
 
   async delete(id: string): Promise<void> {
+    this.log.debug('Deleting message', { id })
     return this.repository.delete(id);
   }
 
   async deleteBySession(sessionId: string): Promise<void> {
+    this.log.info('Deleting all messages for session', { sessionId })
     return this.repository.deleteBySession(sessionId);
   }
 

@@ -1,7 +1,9 @@
 import { streamText } from "ai"
+import { Logger, ConsoleTransport } from "../../../helpers/logger"
 import type { LanguageModel, ModelMessage, ToolSet } from "ai"
 import type { StreamHandlers } from "../types/streamTypes"
 import type { PromptResponse } from "../types/promptTypes"
+import type { ILogger } from "../../../helpers/logger"
 import streamPartHandlers from "./streamPartHandlers"
 
 class PromptHandler {
@@ -9,15 +11,19 @@ class PromptHandler {
   public model: LanguageModel
   private tools: ToolSet
   private system: string
+  private readonly log: ILogger
 
-  constructor(model: LanguageModel, contextWindow: number | undefined, tools: ToolSet, system: string) {
+  constructor(model: LanguageModel, contextWindow: number | undefined, tools: ToolSet, system: string, logger?: ILogger) {
     this.model = model
     this.contextWindow = contextWindow
     this.tools = tools
     this.system = system
+    this.log = logger?.child('PromptHandler') ?? new Logger('PromptHandler', [new ConsoleTransport()])
   }
 
   public async ask(messages: ModelMessage[], handlers: StreamHandlers = {}): Promise<PromptResponse> {
+    this.log.debug('Sending request', { messageCount: messages.length })
+
     const stream = streamText({
       model: this.model,
       system: this.system,
@@ -36,6 +42,8 @@ class PromptHandler {
     const contextUsagePercent = this.contextWindow
       ? Math.round((consumedTokens / this.contextWindow) * 10000) / 100
       : "No context length info"
+
+    this.log.info('Response complete', { totalTokens: consumedTokens, contextUsagePercent })
 
     return {
       text,

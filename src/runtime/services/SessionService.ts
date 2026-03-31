@@ -1,6 +1,8 @@
+import { Logger, ConsoleTransport } from "../../helpers/logger";
+import { randomUUID } from "crypto";
 import type { SessionRepository } from "../db/repositories/SessionRepository";
 import type { Session } from "../db/schema";
-import { randomUUID } from "crypto";
+import type { ILogger } from "../../helpers/logger";
 
 export interface CreateSessionInput {
   name: string;
@@ -8,17 +10,24 @@ export interface CreateSessionInput {
 }
 
 export class SessionService {
-  constructor(private readonly repository: SessionRepository) {}
+  private readonly log: ILogger
+
+  constructor(private readonly repository: SessionRepository, logger?: ILogger) {
+    this.log = logger?.child('SessionService') ?? new Logger('SessionService', [new ConsoleTransport()])
+  }
 
   async create(input: CreateSessionInput): Promise<Session> {
+    this.log.info('Creating session', { name: input.name, modelId: input.modelId })
     const now = new Date();
-    return this.repository.create({
+    const session = await this.repository.create({
       id: randomUUID(),
       name: input.name,
       modelId: input.modelId,
       createdAt: now,
       updatedAt: now,
     });
+    this.log.debug('Session persisted', { id: session.id })
+    return session
   }
 
   async getById(id: string): Promise<Session | null> {
@@ -33,6 +42,7 @@ export class SessionService {
     id: string,
     data: Partial<Pick<Session, "name" | "modelId" | "summary" | "metadata">>,
   ): Promise<Session | null> {
+    this.log.debug('Updating session', { id, fields: Object.keys(data) })
     return this.repository.update(id, data);
   }
 
@@ -41,6 +51,7 @@ export class SessionService {
   }
 
   async delete(id: string): Promise<void> {
+    this.log.info('Deleting session', { id })
     return this.repository.delete(id);
   }
 }

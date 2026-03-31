@@ -6,6 +6,7 @@ export const sessions = sqliteTable("sessions", {
   summary: text("summary"),
   metadata: text("metadata", { mode: "json" }).$type<Record<string, unknown>>(),
   modelId: text("model_id").notNull(),
+  totalTokens: integer("total_tokens").default(0).notNull(),
   createdAt: integer("created_at", { mode: "timestamp" }).notNull(),
   updatedAt: integer("updated_at", { mode: "timestamp" }).notNull(),
 });

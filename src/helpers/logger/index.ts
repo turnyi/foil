@@ -1,4 +1,4 @@
 export { Logger } from './logger'
 export { ConsoleTransport } from './transports/console.transport'
 export { FileTransport } from './transports/file.transport'
-export type { LogTransport, LogLevel } from './types'
+export type { LogTransport, LogLevel, ILogger } from './types'
