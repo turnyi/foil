@@ -1,23 +1,9 @@
 import { createLogger } from '../../helpers/logger'
 import { randomUUID } from 'crypto'
 import type { MessageRepository } from '../../db/repositories/MessageRepository'
-import { type Message } from '../../db/schema'
+import { type Message, type NewMessage } from '../../db/schema'
 import type { ModelMessage } from 'ai'
 import type { ILogger } from '../../helpers/logger'
-
-export interface CreateMessageInput {
-  sessionId: string
-  role: 'user' | 'assistant' | 'tool' | 'system'
-  content: unknown
-  reasoning?: string
-  tokens?: number
-}
-export interface UpdateMessageInput {
-  sessionId: string
-  role: 'user' | 'assistant' | 'tool' | 'system'
-  content: unknown
-  tokens?: number
-}
 
 export class MessageService {
   private readonly log: ILogger
@@ -29,7 +15,7 @@ export class MessageService {
     this.log = logger?.child('MessageService') ?? createLogger('MessageService')
   }
 
-  async create(input: CreateMessageInput): Promise<Message> {
+  async create(input: NewMessage): Promise<Message> {
     this.log.debug('Persisting message', { sessionId: input.sessionId, role: input.role })
     return this.repository.create({
       id: randomUUID(),
@@ -42,7 +28,7 @@ export class MessageService {
     })
   }
 
-  async updateLatest(input: UpdateMessageInput): Promise<Message> {
+  async updateLatest(input: Partial<Message>): Promise<Message> {
     this.log.debug('Persisting message', { sessionId: input.sessionId, role: input.role })
     const messageToUpdate = await this.repository.getLatestByRoleAndSession(
       input.sessionId,

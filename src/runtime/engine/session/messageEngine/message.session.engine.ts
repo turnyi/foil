@@ -1,12 +1,12 @@
-import { createLogger } from '../../../helpers/logger'
+import { createLogger } from '../../../../helpers/logger'
 import type { ModelMessage } from 'ai'
-import type { Session } from '../../../db/schema'
-import type { MessageService, SessionService } from '../../services'
-import type ISessionEngine from './isession.engine'
-import type { ILogger } from '../../../helpers/logger'
-import type PromptHandler from '../../ai/prompt/promptHandler'
-import CREATE_TITLE from './createTitle.txt'
-import type { StreamHandlers } from '../../ai/types/streamTypes'
+import type { Session } from '../../../../db/schema'
+import type ISessionEngine from '../isession.engine'
+import type { ILogger } from '../../../../helpers/logger'
+import type PromptHandler from '../../../ai/prompt/promptHandler'
+import CREATE_TITLE from '../createTitle.txt'
+import type { StreamHandlers } from '../../../ai/types/streamTypes'
+import type { MessageService, SessionService } from '../../../services'
 
 export default class MessageSession implements ISessionEngine {
   private sessionService: SessionService
@@ -95,7 +95,6 @@ export default class MessageSession implements ISessionEngine {
           content: '',
           status: 'active',
         })
-        messageId = msg.id
       },
       onFinish: async (finishReason: string, totalUsage: unknown) => {
         await this.messageService.updateLatest({ status: 'finished' })
@@ -109,26 +108,20 @@ export default class MessageSession implements ISessionEngine {
         await this.messageService.updateLatest({ status: 'error' })
         this.log.error('Stream error', { sessionId, error })
       },
-      onTextStart: async () => {
-        textBuffer = ''
-      },
+      onTextStart: async () => {},
       onText: async (text: string) => {
-        textBuffer += text
-        await this.messageService.updateLatest({ content: textBuffer })
+        await this.messageService.updateLatest({ content: text })
       },
       onTextEnd: async () => {
-        await this.messageService.updateLatest({ content: textBuffer })
+        await this.messageService.updateLatest({ status: 'finished' })
       },
 
-      onReasoningStart: async () => {
-        reasoningBuffer = ''
-      },
+      onReasoningStart: async () => {},
       onReasoning: async (text: string) => {
-        reasoningBuffer += text
-        await this.messageService.updateLatest({ reasoning: reasoningBuffer })
+        await this.messageService.updateLatest({ reasoning: text })
       },
       onReasoningEnd: async () => {
-        await this.messageService.updateLatest({ reasoning: reasoningBuffer })
+        await this.messageService.updateLatest({ status: 'finished' })
       },
 
       onToolCall: async (toolName: string, args: unknown) => {
