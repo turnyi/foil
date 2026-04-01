@@ -1,18 +1,20 @@
-import { createLogger } from '../../helpers/logger'
+import { injectable, inject } from 'tsyringe'
 import { randomUUID } from 'crypto'
-import type { MessageRepository } from '../../db/repositories/MessageRepository'
+import { MessageRepository } from '../../db/repositories/MessageRepository'
+import { TOKEN } from '../../di/tokens'
 import { type Message, type NewMessage } from '../../db/schema'
 import type { ModelMessage } from 'ai'
 import type { ILogger } from '../../helpers/logger'
 
+@injectable()
 export class MessageService {
   private readonly log: ILogger
 
   constructor(
-    private readonly repository: MessageRepository,
-    logger?: ILogger,
+    @inject(MessageRepository) private readonly repository: MessageRepository,
+    @inject(TOKEN.Logger) logger: ILogger,
   ) {
-    this.log = logger?.child('MessageService') ?? createLogger('MessageService')
+    this.log = logger.child('MessageService')
   }
 
   async create(input: NewMessage): Promise<Message> {

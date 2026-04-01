@@ -1,6 +1,7 @@
-import { createLogger } from '../../helpers/logger'
+import { injectable, inject } from 'tsyringe'
 import { randomUUID } from 'crypto'
-import type { SessionRepository } from '../db/repositories/SessionRepository'
+import { SessionRepository } from '../db/repositories/SessionRepository'
+import { TOKEN } from '../../di/tokens'
 import type { Session } from '../db/schema'
 import type { ILogger } from '../../helpers/logger'
 
@@ -8,23 +9,23 @@ export interface CreateSessionInput {
   name: string
 }
 
+@injectable()
 export class SessionService {
   private readonly log: ILogger
 
   constructor(
-    private readonly repository: SessionRepository,
-    logger?: ILogger,
+    @inject(SessionRepository) private readonly repository: SessionRepository,
+    @inject(TOKEN.Logger) logger: ILogger,
   ) {
-    this.log = logger?.child('SessionService') ?? createLogger('SessionService')
+    this.log = logger.child('SessionService')
   }
 
   async create(input: CreateSessionInput): Promise<Session> {
-    this.log.info('Creating session', { name: input.name, modelId: input.modelId })
+    this.log.info('Creating session', { name: input.name })
     const now = new Date()
     const session = await this.repository.create({
       id: randomUUID(),
       name: input.name,
-      modelId: input.modelId,
       createdAt: now,
       updatedAt: now,
     })
@@ -42,7 +43,7 @@ export class SessionService {
 
   async update(
     id: string,
-    data: Partial<Pick<Session, 'name' | 'modelId' | 'summary' | 'metadata' | 'totalTokens'>>,
+    data: Partial<Pick<Session, 'name' | 'summary' | 'metadata' | 'totalTokens'>>,
   ): Promise<Session | null> {
     this.log.debug('Updating session', { id, fields: Object.keys(data) })
     return this.repository.update(id, data)

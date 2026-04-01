@@ -1,7 +1,9 @@
+import { injectable } from 'tsyringe'
 import { eq, asc, and, desc } from 'drizzle-orm'
 import { db } from '../index'
 import { messages, type Message, type NewMessage } from '../schema'
 
+@injectable()
 export class MessageRepository {
   async create(message: NewMessage): Promise<Message> {
     const created = await db.insert(messages).values(message).returning()

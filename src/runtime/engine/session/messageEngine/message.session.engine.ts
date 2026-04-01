@@ -1,30 +1,28 @@
-import { createLogger } from '../../../../helpers/logger'
+import { injectable, inject } from 'tsyringe'
 import type { ModelMessage } from 'ai'
 import type { Session } from '../../../../db/schema'
 import type ISessionEngine from '../isession.engine'
 import type { ILogger } from '../../../../helpers/logger'
-import type PromptHandler from '../../../ai/prompt/promptHandler'
+import PromptHandler from '../../../ai/prompt/promptHandler'
+import { SessionService } from '../../../services/SessionService'
+import { MessageService } from '../../../services/MessageService'
+import { TOKEN } from '../../../../di/tokens'
 import CREATE_TITLE from '../createTitle.txt'
 import type { StreamHandlers } from '../../../ai/types/streamTypes'
-import type { MessageService, SessionService } from '../../../services'
 
+@injectable()
 export default class MessageSession implements ISessionEngine {
-  private sessionService: SessionService
-  private messageService: MessageService
-  private promptHandler: PromptHandler
   private readonly log: ILogger
 
   constructor(
-    sessionService: SessionService,
-    messageService: MessageService,
-    promptHandler: PromptHandler,
-    logger?: ILogger,
+    @inject(SessionService) private sessionService: SessionService,
+    @inject(MessageService) private messageService: MessageService,
+    @inject(PromptHandler) private promptHandler: PromptHandler,
+    @inject(TOKEN.Logger) logger: ILogger,
   ) {
-    this.sessionService = sessionService
-    this.messageService = messageService
-    this.promptHandler = promptHandler
-    this.log = logger?.child('MessageSession') ?? createLogger('MessageSession')
+    this.log = logger.child('MessageSession')
   }
+
   async getSession(id: string): Promise<Session> {
     return await this.sessionService.getById(id)
   }
@@ -36,9 +34,7 @@ export default class MessageSession implements ISessionEngine {
   async buildContext(promptMessage: ModelMessage, sessionId: string): Promise<ModelMessage[]> {
     const session = await this.sessionService.getById(sessionId)
     if (!session) {
-      this.log.error('Session not found', {
-        sessionId: session.id,
-      })
+      this.log.error('Session not found', { sessionId })
       throw new Error('session not found')
     }
 
@@ -89,7 +85,7 @@ export default class MessageSession implements ISessionEngine {
   public getStreamHandlers(sessionId: string): StreamHandlers {
     return {
       onStart: async () => {
-        const msg = await this.messageService.create({
+        await this.messageService.create({
           sessionId,
           role: 'assistant',
           content: '',

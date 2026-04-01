@@ -1,12 +1,13 @@
+import { injectable, inject } from 'tsyringe'
 import { streamText } from 'ai'
-import { createLogger } from '../../../helpers/logger'
+import { TOKEN } from '../../../di/tokens'
 import type { LanguageModel, ModelMessage, ToolSet } from 'ai'
 import type { StreamHandlers } from '../types/streamTypes'
 import type { PromptResponse } from '../types/promptTypes'
 import type { ILogger } from '../../../helpers/logger'
 import streamPartHandlers from './streamPartHandlers'
-import type ISessionEngine from '../../engine/session/isession.engine'
 
+@injectable()
 class PromptHandler {
   public contextWindow?: number
   public model: LanguageModel
@@ -15,18 +16,17 @@ class PromptHandler {
   private readonly log: ILogger
 
   constructor(
-    model: LanguageModel,
-    contextWindow: number | undefined,
-    tools: ToolSet,
-    system: string,
-    protected sessionEngine: ISessionEngine,
-    logger?: ILogger,
+    @inject(TOKEN.LanguageModel) model: LanguageModel,
+    @inject(TOKEN.ContextWindow) contextWindow: number | undefined,
+    @inject(TOKEN.ToolSet) tools: ToolSet,
+    @inject(TOKEN.SystemPrompt) system: string,
+    @inject(TOKEN.Logger) logger: ILogger,
   ) {
     this.model = model
     this.contextWindow = contextWindow
     this.tools = tools
     this.system = system
-    this.log = logger?.child('PromptHandler') ?? createLogger('PromptHandler')
+    this.log = logger.child('PromptHandler')
   }
 
   public async ask(

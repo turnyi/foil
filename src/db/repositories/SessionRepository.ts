@@ -1,7 +1,9 @@
+import { injectable } from 'tsyringe'
 import { eq, desc } from "drizzle-orm";
 import { db } from "../index";
 import { sessions, type Session, type NewSession } from "../schema";
 
+@injectable()
 export class SessionRepository {
   async create(session: NewSession): Promise<Session> {
     const created = await db.insert(sessions).values(session).returning();

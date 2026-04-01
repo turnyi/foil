@@ -1,20 +1,28 @@
-import type PromptHandler from './ai/prompt/promptHandler'
-import type { Logger } from '../helpers/logger'
-import type ISessionEngine from './engine/session/isession.engine'
+import { injectable, inject } from 'tsyringe'
+import PromptHandler from './ai/prompt/promptHandler'
+import MessageSession from './engine/session/messageEngine/message.session.engine'
+import { TOKEN } from '../di/tokens'
 import type { Session } from '../db/schema'
 import type { StreamHandlers } from './ai/types/streamTypes'
 import type { AskResult } from './engine/types'
+import type { ILogger } from '../helpers/logger'
 
+@injectable()
 export class Engine {
+  private readonly log: ILogger
+
   constructor(
-    private handler: PromptHandler,
-    private sessionEngine: ISessionEngine,
-    private log: Logger,
-  ) {}
+    @inject(PromptHandler) private handler: PromptHandler,
+    @inject(MessageSession) private sessionEngine: MessageSession,
+    @inject(TOKEN.Logger) logger: ILogger,
+  ) {
+    this.log = logger.child('Engine')
+  }
 
   async getSessions(): Promise<Session[]> {
     return this.sessionEngine.getSessions()
   }
+
   async getMessages(sessionId: string) {
     this.sessionEngine.getMessages(sessionId)
   }
