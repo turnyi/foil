@@ -1,7 +1,6 @@
-import type { ModelMessage } from "ai"
-import type { Session } from "../../../db/schema"
-import type ISessionEngine from "./isession.engine"
-import type { SessionMetadata } from "../types"
+import type { ModelMessage } from 'ai'
+import type { Session } from '../../../db/schema'
+import type ISessionEngine from './isession.engine'
 
 export default class MemorySession implements ISessionEngine {
   private messages: ModelMessage[] = []
@@ -14,12 +13,12 @@ export default class MemorySession implements ISessionEngine {
     return undefined
   }
 
-  async buildContext(promptMessage: ModelMessage): Promise<ModelMessage[]> {
+  async buildContext(promptMessage: ModelMessage, sessionId: string): Promise<ModelMessage[]> {
     this.messages.push(promptMessage)
     return this.messages
   }
 
-  async appendResponse(messages: ModelMessage[]): Promise<void> {
+  async appendResponse(messages: ModelMessage[], sessionId: string): Promise<void> {
     this.messages.push(...messages)
   }
 
@@ -31,11 +30,5 @@ export default class MemorySession implements ISessionEngine {
     throw new Error('MemorySession does not support persistent sessions.')
   }
 
-  async loadSession(_session: Session, messages: ModelMessage[]): Promise<void> {
-    this.messages = [...messages]
-  }
-
-  async updateTitle(_name: string, _summary: string): Promise<void> { }
-  async updateMetadata(_patch: SessionMetadata): Promise<void> { }
-  async accumulateTokens(_tokens: number): Promise<void> { }
+  async loadSession(sessionId: string): Promise<void> {}
 }

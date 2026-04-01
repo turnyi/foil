@@ -1,4 +1,4 @@
-import { Logger, ConsoleTransport } from "../../helpers/logger";
+import { createLogger } from "../../helpers/logger";
 import { randomUUID } from "crypto";
 import type { MessageRepository } from "../../db/repositories/MessageRepository";
 import type { Message } from "../../db/schema";
@@ -16,7 +16,7 @@ export class MessageService {
   private readonly log: ILogger
 
   constructor(private readonly repository: MessageRepository, logger?: ILogger) {
-    this.log = logger?.child('MessageService') ?? new Logger('MessageService', [new ConsoleTransport()])
+    this.log = logger?.child('MessageService') ?? createLogger('MessageService')
   }
 
   async create(input: CreateMessageInput): Promise<Message> {

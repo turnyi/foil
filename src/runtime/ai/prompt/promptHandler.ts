@@ -1,5 +1,5 @@
 import { streamText } from "ai"
-import { Logger, ConsoleTransport } from "../../../helpers/logger"
+import { createLogger } from "../../../helpers/logger"
 import type { LanguageModel, ModelMessage, ToolSet } from "ai"
 import type { StreamHandlers } from "../types/streamTypes"
 import type { PromptResponse } from "../types/promptTypes"
@@ -18,7 +18,7 @@ class PromptHandler {
     this.contextWindow = contextWindow
     this.tools = tools
     this.system = system
-    this.log = logger?.child('PromptHandler') ?? new Logger('PromptHandler', [new ConsoleTransport()])
+    this.log = logger?.child('PromptHandler') ?? createLogger('PromptHandler')
   }
 
   public async ask(messages: ModelMessage[], handlers: StreamHandlers = {}): Promise<PromptResponse> {

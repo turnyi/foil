@@ -4,7 +4,7 @@ import { pathToFileURL, fileURLToPath } from "url"
 import { existsSync } from "fs"
 import { resolve } from "path"
 import { EventEmitter } from "events"
-import { Logger, ConsoleTransport } from "../../helpers/logger"
+import { createLogger } from "../../helpers/logger"
 import { getServerForFile } from "./lspRegistry"
 import type { LSPServer } from "./lspRegistry"
 import type { Diagnostic } from "vscode-languageserver-types"
@@ -24,7 +24,7 @@ class LSPManager {
   private resolvedClients = new Map<string, LSPConnection>()
   private broken = new Set<string>()
   private emitter = new EventEmitter()
-  private log: ILogger = new Logger('LSPManager', [new ConsoleTransport()])
+  private log: ILogger = createLogger('LSPManager')
 
   setLogger(logger: ILogger): void {
     this.log = logger.child('LSPManager')

@@ -1,4 +1,4 @@
-import { Logger, ConsoleTransport } from "../../../helpers/logger"
+import { createLogger } from "../../../helpers/logger"
 import type IConsumer from "./IConsumer"
 import type ISessionEngine from "../session/isession.engine"
 import type { StreamHandlers } from "../../ai/types/streamTypes"
@@ -13,7 +13,7 @@ export class FileTracker implements IConsumer {
   private WRITE_TOOLS = new Set(['write', 'edit', 'multiedit', 'apply_patch'])
 
   constructor(private readonly session: ISessionEngine, logger?: ILogger) {
-    this.log = logger?.child('FileTracker') ?? new Logger('FileTracker', [new ConsoleTransport()])
+    this.log = logger?.child('FileTracker') ?? createLogger('FileTracker')
   }
 
   getHandlers(): StreamHandlers {
