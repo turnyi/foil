@@ -1,5 +1,6 @@
 import type { ModelMessage } from 'ai'
 import type { Session } from '../../../db/schema'
+import type { StreamHandlers } from '../../ai/types/streamTypes'
 
 export default interface ISessionEngine {
   buildContext(promptMessage: ModelMessage, sessionId: string): Promise<ModelMessage[]>
@@ -7,4 +8,5 @@ export default interface ISessionEngine {
   getSessions(): Promise<Session[]>
   getSession(id: string): Promise<Session>
   getMessages(sessionId: string): Promise<ModelMessage[]>
+  getStreamHandlers(sessionId: string): StreamHandlers
 }

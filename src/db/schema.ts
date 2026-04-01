@@ -15,8 +15,10 @@ export const messages = sqliteTable('messages', {
   sessionId: text('session_id')
     .notNull()
     .references(() => sessions.id, { onDelete: 'cascade' }),
-  role: text('role', { enum: ['user', 'assistant', 'tool'] }).notNull(),
+  role: text('role', { enum: ['user', 'assistant', 'tool', 'system'] }).notNull(),
+  status: text('status', { enum: ['active', 'finished', 'aborted', 'error'] }).default('active'),
   content: text('content', { mode: 'json' }).$type<unknown>().notNull(),
+  reasoning: text('content', { mode: 'json' }).$type<unknown>(),
   tokens: integer('tokens'),
   createdAt: integer('created_at', { mode: 'timestamp' }).notNull(),
 })

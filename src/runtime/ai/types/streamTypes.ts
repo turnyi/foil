@@ -1,4 +1,4 @@
-import { Output } from "ai"
+import { Output } from 'ai'
 
 export type TextOutput = ReturnType<typeof Output.text>
 
@@ -35,28 +35,28 @@ export enum StreamPartType {
 }
 
 export interface StreamHandlers {
-  onText?: (text: string) => void
-  onTextStart?: () => void
-  onTextEnd?: () => void
-  onReasoning?: (text: string) => void
-  onReasoningStart?: () => void
-  onReasoningEnd?: () => void
-  onToolCall?: (toolName: string, args: unknown) => void
+  onText?: (text: string) => Promise<void>
+  onTextStart?: () => Promise<void>
+  onTextEnd?: () => Promise<void>
+  onReasoning?: (text: string) => Promise<void>
+  onReasoningStart?: () => Promise<void>
+  onReasoningEnd?: () => Promise<void>
+  onToolCall?: (toolName: string, args: unknown) => Promise<void>
   onToolResult?: (toolName: string, result: unknown) => void
-  onToolError?: (toolName: string, error: unknown) => void
-  onToolInputStart?: (toolName: string) => void
-  onToolInputDelta?: (toolName: string, delta: string) => void
-  onToolInputEnd?: (toolName: string) => void
-  onToolOutputDenied?: (toolName: string) => void
-  onToolApprovalRequest?: (toolName: string) => void
-  onError?: (error: unknown) => void
-  onAbort?: (reason?: string) => void
-  onStepStart?: () => void
-  onStepFinish?: () => void
-  onStart?: () => void
-  onFinish?: (finishReason: string, totalUsage: unknown) => void
-  onSource?: (source: unknown) => void
-  onFile?: (file: unknown) => void
-  onRaw?: (raw: unknown) => void
-  onUnhandled?: (part: unknown) => void
+  onToolError?: (toolName: string, error: unknown) => Promise<void>
+  onToolInputStart?: (toolName: string) => Promise<void>
+  onToolInputDelta?: (toolName: string, delta: string) => Promise<void>
+  onToolInputEnd?: (toolName: string) => Promise<void>
+  onToolOutputDenied?: (toolName: string) => Promise<void>
+  onToolApprovalRequest?: (toolName: string) => Promise<void>
+  onError?: (error: unknown) => Promise<void>
+  onAbort?: (reason?: string) => Promise<void>
+  onStepStart?: () => Promise<void>
+  onStepFinish?: () => Promise<void>
+  onStart?: () => Promise<void>
+  onFinish?: (finishReason: string, totalUsage: unknown) => Promise<void>
+  onSource?: (source: unknown) => Promise<void>
+  onFile?: (file: unknown) => Promise<void>
+  onRaw?: (raw: unknown) => Promise<void>
+  onUnhandled?: (part: unknown) => Promise<void>
 }

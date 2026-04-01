@@ -1,10 +1,11 @@
-import { streamText } from "ai"
-import { createLogger } from "../../../helpers/logger"
-import type { LanguageModel, ModelMessage, ToolSet } from "ai"
-import type { StreamHandlers } from "../types/streamTypes"
-import type { PromptResponse } from "../types/promptTypes"
-import type { ILogger } from "../../../helpers/logger"
-import streamPartHandlers from "./streamPartHandlers"
+import { streamText } from 'ai'
+import { createLogger } from '../../../helpers/logger'
+import type { LanguageModel, ModelMessage, ToolSet } from 'ai'
+import type { StreamHandlers } from '../types/streamTypes'
+import type { PromptResponse } from '../types/promptTypes'
+import type { ILogger } from '../../../helpers/logger'
+import streamPartHandlers from './streamPartHandlers'
+import type ISessionEngine from '../../engine/session/isession.engine'
 
 class PromptHandler {
   public contextWindow?: number
@@ -13,7 +14,14 @@ class PromptHandler {
   private system: string
   private readonly log: ILogger
 
-  constructor(model: LanguageModel, contextWindow: number | undefined, tools: ToolSet, system: string, logger?: ILogger) {
+  constructor(
+    model: LanguageModel,
+    contextWindow: number | undefined,
+    tools: ToolSet,
+    system: string,
+    protected sessionEngine: ISessionEngine,
+    logger?: ILogger,
+  ) {
     this.model = model
     this.contextWindow = contextWindow
     this.tools = tools
@@ -21,7 +29,10 @@ class PromptHandler {
     this.log = logger?.child('PromptHandler') ?? createLogger('PromptHandler')
   }
 
-  public async ask(messages: ModelMessage[], handlers: StreamHandlers = {}): Promise<PromptResponse> {
+  public async ask(
+    messages: ModelMessage[],
+    handlers: StreamHandlers = {},
+  ): Promise<PromptResponse> {
     this.log.debug('Sending request', { messageCount: messages.length })
 
     const stream = streamText({
@@ -37,11 +48,15 @@ class PromptHandler {
       streamPartHandlers[part.type]?.(part, handlers)
     }
 
-    const [text, usage, response] = await Promise.all([stream.text, stream.totalUsage, stream.response])
+    const [text, usage, response] = await Promise.all([
+      stream.text,
+      stream.totalUsage,
+      stream.response,
+    ])
     const consumedTokens = usage.totalTokens ?? (usage.inputTokens ?? 0) + (usage.outputTokens ?? 0)
     const contextUsagePercent = this.contextWindow
       ? Math.round((consumedTokens / this.contextWindow) * 10000) / 100
-      : "No context length info"
+      : 'No context length info'
 
     this.log.info('Response complete', { totalTokens: consumedTokens, contextUsagePercent })
 

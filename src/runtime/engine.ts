@@ -30,7 +30,6 @@ export class Engine {
 
     const result = await this.handler.ask(
       messages,
-      //Todo continue fixing here
       mergeHandlers(new FileTracker(this.sessionEngine, this.log).getHandlers(), ...handlers),
     )
     this.log.debug('Response received', { totalTokens: result.totalTokens })

@@ -6,6 +6,7 @@ import type ISessionEngine from './isession.engine'
 import type { ILogger } from '../../../helpers/logger'
 import type PromptHandler from '../../ai/prompt/promptHandler'
 import CREATE_TITLE from './createTitle.txt'
+import type { StreamHandlers } from '../../ai/types/streamTypes'
 
 export default class MessageSession implements ISessionEngine {
   private sessionService: SessionService
@@ -24,7 +25,7 @@ export default class MessageSession implements ISessionEngine {
     this.promptHandler = promptHandler
     this.log = logger?.child('MessageSession') ?? createLogger('MessageSession')
   }
-  getSession(id: string): Promise<Session> {
+  async getSession(id: string): Promise<Session> {
     return await this.sessionService.getById(id)
   }
 
@@ -83,5 +84,77 @@ export default class MessageSession implements ISessionEngine {
     const session = await this.sessionService.create({ name: text })
     this.log.debug('Session created', { id: session.id })
     return session
+  }
+
+  public getStreamHandlers(sessionId: string): StreamHandlers {
+    return {
+      onStart: async () => {
+        const msg = await this.messageService.create({
+          sessionId,
+          role: 'assistant',
+          content: '',
+          status: 'active',
+        })
+        messageId = msg.id
+      },
+      onFinish: async (finishReason: string, totalUsage: unknown) => {
+        await this.messageService.updateLatest({ status: 'finished' })
+        this.log.debug('Stream finished', { sessionId, finishReason, totalUsage })
+      },
+      onAbort: async (reason?: string) => {
+        await this.messageService.updateLatest({ status: 'aborted' })
+        this.log.warn('Stream aborted', { sessionId, reason })
+      },
+      onError: async (error: unknown) => {
+        await this.messageService.updateLatest({ status: 'error' })
+        this.log.error('Stream error', { sessionId, error })
+      },
+      onTextStart: async () => {
+        textBuffer = ''
+      },
+      onText: async (text: string) => {
+        textBuffer += text
+        await this.messageService.updateLatest({ content: textBuffer })
+      },
+      onTextEnd: async () => {
+        await this.messageService.updateLatest({ content: textBuffer })
+      },
+
+      onReasoningStart: async () => {
+        reasoningBuffer = ''
+      },
+      onReasoning: async (text: string) => {
+        reasoningBuffer += text
+        await this.messageService.updateLatest({ reasoning: reasoningBuffer })
+      },
+      onReasoningEnd: async () => {
+        await this.messageService.updateLatest({ reasoning: reasoningBuffer })
+      },
+
+      onToolCall: async (toolName: string, args: unknown) => {
+        await this.messageService.create({
+          sessionId,
+          role: 'tool',
+          content: { toolName, args },
+          status: 'finished',
+        })
+      },
+      onToolResult: async (toolName: string, result: unknown) => {
+        await this.messageService.create({
+          sessionId,
+          role: 'tool',
+          content: { toolName, result },
+          status: 'finished',
+        })
+      },
+      onToolError: async (toolName: string, error: unknown) => {
+        await this.messageService.create({
+          sessionId,
+          role: 'tool',
+          content: { toolName, error },
+          status: 'error',
+        })
+      },
+    }
   }
 }
