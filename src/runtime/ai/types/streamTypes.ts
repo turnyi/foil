@@ -1,4 +1,4 @@
-import { Output } from 'ai'
+import type { Output } from 'ai'
 
 export type TextOutput = ReturnType<typeof Output.text>
 

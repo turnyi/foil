@@ -1,7 +1,5 @@
-import PromptHandler from './ai/prompt/promptHandler'
-import mergeHandlers from './ai/prompt/mergeHandlers'
-import { FileTracker } from './engine/consumers/fileTracker'
-import { Logger } from '../helpers/logger'
+import type PromptHandler from './ai/prompt/promptHandler'
+import type { Logger } from '../helpers/logger'
 import type ISessionEngine from './engine/session/isession.engine'
 import type { Session } from '../db/schema'
 import type { StreamHandlers } from './ai/types/streamTypes'
@@ -21,17 +19,14 @@ export class Engine {
     this.sessionEngine.getMessages(sessionId)
   }
 
-  async ask(message: string, sessionId: string, ...handlers: StreamHandlers[]): Promise<AskResult> {
+  async ask(message: string, sessionId: string, handlers: StreamHandlers[]): Promise<AskResult> {
     const messages = await this.sessionEngine.buildContext(
       { role: 'user', content: message },
       sessionId,
     )
     this.log.debug('Asking', { messageCount: messages.length })
 
-    const result = await this.handler.ask(
-      messages,
-      mergeHandlers(new FileTracker(this.sessionEngine, this.log).getHandlers(), ...handlers),
-    )
+    const result = await this.handler.ask(messages, handlers)
     this.log.debug('Response received', { totalTokens: result.totalTokens })
 
     await Promise.all([this.sessionEngine.appendResponse(result.messages, sessionId)])

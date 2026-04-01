@@ -1,10 +1,10 @@
-import type { z } from "zod"
+import type { z } from 'zod'
 
 interface ITool<TParams extends z.ZodType = z.ZodType> {
   name: string
   description: string
   parameters: TParams
-  execute: (params: any) => Promise<unknown>
+  execute: (params: unknown) => Promise<unknown>
 }
 
 export type { ITool as default }

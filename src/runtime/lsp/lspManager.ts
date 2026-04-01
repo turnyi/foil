@@ -1,23 +1,25 @@
-import { createMessageConnection, StreamMessageReader, StreamMessageWriter } from "vscode-jsonrpc/node"
-import { spawn } from "child_process"
-import { pathToFileURL, fileURLToPath } from "url"
-import { existsSync } from "fs"
-import { resolve } from "path"
-import { EventEmitter } from "events"
-import { createLogger } from "../../helpers/logger"
-import { getServerForFile } from "./lspRegistry"
-import type { LSPServer } from "./lspRegistry"
-import type { Diagnostic } from "vscode-languageserver-types"
-import type { DiagnosticsEvent, LSPConnection } from "./types"
-import type { ILogger } from "../../helpers/logger"
-import { findRoot } from "../../helpers/fileSystem"
-import { withTimeout } from "../../helpers/timeout"
-
+import {
+  createMessageConnection,
+  StreamMessageReader,
+  StreamMessageWriter,
+} from 'vscode-jsonrpc/node'
+import { spawn } from 'child_process'
+import { pathToFileURL, fileURLToPath } from 'url'
+import { existsSync } from 'fs'
+import { resolve } from 'path'
+import { EventEmitter } from 'events'
+import { createLogger } from '../../helpers/logger'
+import { getServerForFile } from './lspRegistry'
+import type { LSPServer } from './lspRegistry'
+import type { Diagnostic } from 'vscode-languageserver-types'
+import type { DiagnosticsEvent, LSPConnection } from './types'
+import type { ILogger } from '../../helpers/logger'
+import { findRoot } from '../../helpers/fileSystem'
+import { withTimeout } from '../../helpers/timeout'
 
 const DIAGNOSTICS_DEBOUNCE_MS = 150
 const DIAGNOSTICS_TIMEOUT_MS = 3_000
 const INITIALIZE_TIMEOUT_MS = 45_000
-
 
 class LSPManager {
   private clients = new Map<string, Promise<LSPConnection>>()
@@ -38,56 +40,63 @@ class LSPManager {
     const key = this.clientKey(config.name, root)
     const emitter = this.emitter
 
-    const localBin = resolve(root, "node_modules/.bin", config.command)
+    const localBin = resolve(root, 'node_modules/.bin', config.command)
     const resolvedCommand = existsSync(localBin) ? localBin : config.command
 
     this.log.debug(`Spawning ${config.name}`, { command: resolvedCommand, args: config.args, root })
 
     const proc = spawn(resolvedCommand, config.args, {
       cwd: root,
-      stdio: ["pipe", "pipe", "pipe"],
+      stdio: ['pipe', 'pipe', 'pipe'],
     })
 
-    proc.stderr?.on("data", (chunk: Buffer) => {
+    proc.stderr?.on('data', (chunk: Buffer) => {
       this.log.warn(`[${config.name}] ${chunk.toString().trimEnd()}`)
     })
 
     await new Promise<void>((resolve, reject) => {
-      proc.once("spawn", () => {
+      proc.once('spawn', () => {
         this.log.info(`Spawned ${config.name}`, { pid: proc.pid, root })
         resolve()
       })
-      proc.once("error", (err) => {
+      proc.once('error', err => {
         this.broken.add(key)
-        this.log.error(`Failed to spawn ${config.name}`, { command: resolvedCommand, error: err.message })
+        this.log.error(`Failed to spawn ${config.name}`, {
+          command: resolvedCommand,
+          error: err.message,
+        })
         reject(new Error(`Failed to spawn ${resolvedCommand}: ${err.message}`))
       })
     })
 
-    const initialization = typeof config.initialization === "function"
-      ? config.initialization(root)
-      : config.initialization ?? {}
+    const initialization =
+      typeof config.initialization === 'function'
+        ? config.initialization(root)
+        : (config.initialization ?? {})
 
     const connection = createMessageConnection(
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
       new StreamMessageReader(proc.stdout as any),
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
       new StreamMessageWriter(proc.stdin as any),
     )
 
     const diagnostics = new Map<string, Diagnostic[]>()
 
-    connection.onNotification("textDocument/publishDiagnostics", (params: any) => {
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    connection.onNotification('textDocument/publishDiagnostics', (params: any) => {
       const filePath = fileURLToPath(params.uri)
       diagnostics.set(filePath, params.diagnostics ?? [])
       const event: DiagnosticsEvent = { path: filePath, serverID: config.name }
-      emitter.emit("diagnostics", event)
+      emitter.emit('diagnostics', event)
     })
 
-    connection.onRequest("window/workDoneProgress/create", () => null)
-    connection.onRequest("workspace/configuration", () => [initialization])
-    connection.onRequest("client/registerCapability", () => { })
-    connection.onRequest("client/unregisterCapability", () => { })
-    connection.onRequest("workspace/workspaceFolders", () => [
-      { name: "workspace", uri: pathToFileURL(root).href },
+    connection.onRequest('window/workDoneProgress/create', () => null)
+    connection.onRequest('workspace/configuration', () => [initialization])
+    connection.onRequest('client/registerCapability', () => {})
+    connection.onRequest('client/unregisterCapability', () => {})
+    connection.onRequest('workspace/workspaceFolders', () => [
+      { name: 'workspace', uri: pathToFileURL(root).href },
     ])
 
     connection.listen()
@@ -95,10 +104,10 @@ class LSPManager {
     this.log.debug(`Initializing ${config.name}`)
     try {
       await withTimeout(
-        connection.sendRequest("initialize", {
+        connection.sendRequest('initialize', {
           rootUri: pathToFileURL(root).href,
           processId: proc.pid,
-          workspaceFolders: [{ name: "workspace", uri: pathToFileURL(root).href }],
+          workspaceFolders: [{ name: 'workspace', uri: pathToFileURL(root).href }],
           initializationOptions: initialization,
           capabilities: {
             window: { workDoneProgress: true },
@@ -123,17 +132,17 @@ class LSPManager {
     }
 
     this.log.info(`${config.name} ready`, { root })
-    await connection.sendNotification("initialized", {})
+    await connection.sendNotification('initialized', {})
 
     if (config.initialization) {
-      await connection.sendNotification("workspace/didChangeConfiguration", {
+      await connection.sendNotification('workspace/didChangeConfiguration', {
         settings: config.initialization,
       })
     }
 
     const files: Record<string, number> = {}
 
-    proc.on("exit", (code) => {
+    proc.on('exit', code => {
       this.log.warn(`${config.name} exited`, { key, code })
       this.clients.delete(key)
       this.resolvedClients.delete(key)
@@ -150,21 +159,21 @@ class LSPManager {
           const version = files[filePath]
 
           if (version !== undefined) {
-            await connection.sendNotification("workspace/didChangeWatchedFiles", {
+            await connection.sendNotification('workspace/didChangeWatchedFiles', {
               changes: [{ uri, type: 2 }],
             })
             const next = version + 1
             files[filePath] = next
-            await connection.sendNotification("textDocument/didChange", {
+            await connection.sendNotification('textDocument/didChange', {
               textDocument: { uri, version: next },
               contentChanges: [{ text }],
             })
           } else {
-            await connection.sendNotification("workspace/didChangeWatchedFiles", {
+            await connection.sendNotification('workspace/didChangeWatchedFiles', {
               changes: [{ uri, type: 1 }],
             })
             diagnostics.delete(filePath)
-            await connection.sendNotification("textDocument/didOpen", {
+            await connection.sendNotification('textDocument/didOpen', {
               textDocument: { uri, languageId: config.languageId, version: 0, text },
             })
             files[filePath] = 0
@@ -175,7 +184,7 @@ class LSPManager {
         let unsub: (() => void) | undefined
         let debounceTimer: ReturnType<typeof setTimeout> | undefined
         await withTimeout(
-          new Promise<void>((resolve) => {
+          new Promise<void>(resolve => {
             const handler = (event: DiagnosticsEvent) => {
               if (event.path === filePath && event.serverID === config.name) {
                 if (debounceTimer) clearTimeout(debounceTimer)
@@ -185,12 +194,12 @@ class LSPManager {
                 }, DIAGNOSTICS_DEBOUNCE_MS)
               }
             }
-            emitter.on("diagnostics", handler)
-            unsub = () => emitter.off("diagnostics", handler)
+            emitter.on('diagnostics', handler)
+            unsub = () => emitter.off('diagnostics', handler)
           }),
           DIAGNOSTICS_TIMEOUT_MS,
         )
-          .catch(() => { })
+          .catch(() => {})
           .finally(() => {
             if (debounceTimer) clearTimeout(debounceTimer)
             unsub?.()
@@ -214,11 +223,11 @@ class LSPManager {
 
     if (!this.clients.has(key)) {
       const promise = this.spawnClient(config, root)
-        .then((client) => {
+        .then(client => {
           this.resolvedClients.set(key, client)
           return client
         })
-        .catch((e) => {
+        .catch(e => {
           this.clients.delete(key)
           throw e
         })
@@ -228,7 +237,9 @@ class LSPManager {
     try {
       return await this.clients.get(key)!
     } catch (e) {
-      this.log.error(`Failed to start ${config.name}`, { error: e instanceof Error ? e.message : String(e) })
+      this.log.error(`Failed to start ${config.name}`, {
+        error: e instanceof Error ? e.message : String(e),
+      })
       return null
     }
   }
@@ -245,10 +256,8 @@ class LSPManager {
     await client.notify.open({ path: filePath })
     await client.waitForDiagnostics({ path: filePath })
     const diags = client.diagnostics.get(filePath) ?? []
-    if (diags.length > 0)
-      this.log.warn('Diagnostics found', { filePath, count: diags.length })
-    else
-      this.log.debug('No diagnostics', { filePath })
+    if (diags.length > 0) this.log.warn('Diagnostics found', { filePath, count: diags.length })
+    else this.log.debug('No diagnostics', { filePath })
     return diags
   }
 
@@ -272,11 +281,14 @@ class LSPManager {
 
   /** Format diagnostics as compact agent-readable strings. */
   formatDiagnostics(filePath: string, diagnostics: Diagnostic[]): string {
-    if (diagnostics.length === 0) return ""
-    const label = (s?: number) => ["", "error", "warning", "info", "hint"][s ?? 1] ?? "error"
+    if (diagnostics.length === 0) return ''
+    const label = (s?: number) => ['', 'error', 'warning', 'info', 'hint'][s ?? 1] ?? 'error'
     return diagnostics
-      .map(d => `${filePath}:${d.range.start.line + 1}:${d.range.start.character + 1} [${label(d.severity)}] ${d.message}`)
-      .join("\n")
+      .map(
+        d =>
+          `${filePath}:${d.range.start.line + 1}:${d.range.start.character + 1} [${label(d.severity)}] ${d.message}`,
+      )
+      .join('\n')
   }
 
   shutdown(): void {

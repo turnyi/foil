@@ -1,4 +1,4 @@
-import { RepositoryContainer } from "../db/repositories/RepositoryContainer";
+import type { RepositoryContainer } from "../db/repositories/RepositoryContainer";
 import { SessionService } from "./SessionService";
 import { MessageService } from "./MessageService";
 

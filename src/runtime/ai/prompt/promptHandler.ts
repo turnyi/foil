@@ -31,7 +31,7 @@ class PromptHandler {
 
   public async ask(
     messages: ModelMessage[],
-    handlers: StreamHandlers = {},
+    handlers: StreamHandlers[] = [],
   ): Promise<PromptResponse> {
     this.log.debug('Sending request', { messageCount: messages.length })
 
@@ -45,7 +45,9 @@ class PromptHandler {
     })
 
     for await (const part of stream.fullStream) {
-      streamPartHandlers[part.type]?.(part, handlers)
+      for (const handler of handlers) {
+        streamPartHandlers[part.type]?.(part, handler)
+      }
     }
 
     const [text, usage, response] = await Promise.all([
