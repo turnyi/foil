@@ -11,6 +11,7 @@ import type { DisplayMessage } from '../types'
 interface MessageStore {
   messages: DisplayMessage[]
   isStreaming: boolean
+  contextUsage: number
   loadMessages: (sessionId: string) => Promise<void>
   sendMessage: (text: string) => Promise<void>
 }
@@ -32,12 +33,14 @@ function dbToDisplay(msg: Message): DisplayMessage {
     type: 'assistant',
     content: typeof msg.content === 'string' ? msg.content : JSON.stringify(msg.content),
     streaming: false,
+    tokens: msg.tokens ?? undefined,
   }
 }
 
 export const useMessageStore = create<MessageStore>((set, get) => ({
   messages: [],
   isStreaming: false,
+  contextUsage: 0,
 
   loadMessages: async (sessionId) => {
     const repo = container.resolve(MessageRepository)
@@ -96,12 +99,16 @@ export const useMessageStore = create<MessageStore>((set, get) => ({
         })
       },
 
-      onFinish: async () => {
+      onFinish: async (_reason: string, totalUsage: unknown) => {
+        const usage = totalUsage as { promptTokens?: number; completionTokens?: number } | null
         set(state => ({
           messages: state.messages.map(m =>
-            m.id === assistantId && m.type === 'assistant' ? { ...m, streaming: false } : m,
+            m.id === assistantId && m.type === 'assistant'
+              ? { ...m, streaming: false, tokens: usage?.completionTokens }
+              : m,
           ),
           isStreaming: false,
+          contextUsage: usage?.promptTokens ?? state.contextUsage,
         }))
       },
 

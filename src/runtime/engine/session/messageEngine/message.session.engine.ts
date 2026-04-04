@@ -85,7 +85,13 @@ export default class MessageSession implements ISessionEngine {
         })
       },
       onFinish: async (finishReason: string, totalUsage: unknown) => {
-        await this.messageService.updateLatest({ sessionId, role: 'assistant', status: 'finished' })
+        const usage = totalUsage as { completionTokens?: number } | null
+        await this.messageService.updateLatest({
+          sessionId,
+          role: 'assistant',
+          status: 'finished',
+          tokens: usage?.completionTokens ?? null,
+        })
         this.log.debug('Stream finished', { sessionId, finishReason, totalUsage })
       },
       onAbort: async (reason?: string) => {

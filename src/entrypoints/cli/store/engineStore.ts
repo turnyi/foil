@@ -3,13 +3,14 @@ import type Engine from '../../../runtime/engine'
 
 interface EngineStore {
   modelName: string
+  contextWindow: number | undefined
 }
 
 let _engine: Engine
 
 export function initEngine(engine: Engine, modelName: string) {
   _engine = engine
-  useEngineStore.setState({ modelName })
+  useEngineStore.setState({ modelName, contextWindow: engine.getContextWindow() })
 }
 
 export function getEngine(): Engine {
@@ -19,4 +20,5 @@ export function getEngine(): Engine {
 
 export const useEngineStore = create<EngineStore>(() => ({
   modelName: '',
+  contextWindow: undefined,
 }))

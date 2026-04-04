@@ -1,6 +1,7 @@
 import React from 'react'
 import { Box, Text } from 'ink'
 import { useEngineStore } from '../../store/engineStore'
+import { useMessageStore } from '../../store/messageStore'
 import TextInput from '../atoms/TextInput'
 
 interface Props {
@@ -9,6 +10,12 @@ interface Props {
 
 export default function InputBox({ value }: Props) {
   const modelName = useEngineStore(state => state.modelName)
+  const contextWindow = useEngineStore(state => state.contextWindow)
+  const contextUsage = useMessageStore(state => state.contextUsage)
+
+  const pct = contextWindow && contextUsage > 0
+    ? Math.round((contextUsage / contextWindow) * 100)
+    : null
 
   return (
     <Box
@@ -28,6 +35,9 @@ export default function InputBox({ value }: Props) {
       <Box marginTop={1} gap={2}>
         <Text color="white" bold>foil</Text>
         <Text dimColor>{modelName}</Text>
+        {pct !== null && (
+          <Text dimColor>{contextUsage.toLocaleString()} / {contextWindow!.toLocaleString()} ctx ({pct}%)</Text>
+        )}
       </Box>
     </Box>
   )

@@ -1,5 +1,4 @@
 import 'reflect-metadata'
-import React from 'react'
 import { render } from 'ink'
 import { setupContainer } from '../../di/container'
 import { initEngine } from './store/engineStore'
