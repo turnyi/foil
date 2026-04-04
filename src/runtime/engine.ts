@@ -2,10 +2,10 @@ import { injectable, inject } from 'tsyringe'
 import PromptHandler from './ai/prompt/promptHandler'
 import MessageSession from './engine/session/messageEngine/message.session.engine'
 import { TOKEN } from '../di/tokens'
-import type { Session } from '../db/schema'
 import type { StreamHandlers } from './ai/types/streamTypes'
 import type { AskResult } from './engine/types'
 import type { ILogger } from '../helpers/logger'
+import type ISessionEngine from './engine/session/isession.engine'
 
 @injectable()
 export class Engine {
@@ -13,18 +13,10 @@ export class Engine {
 
   constructor(
     @inject(PromptHandler) private handler: PromptHandler,
-    @inject(MessageSession) private sessionEngine: MessageSession,
+    @inject(MessageSession) private sessionEngine: ISessionEngine,
     @inject(TOKEN.Logger) logger: ILogger,
   ) {
     this.log = logger.child('Engine')
-  }
-
-  async getSessions(): Promise<Session[]> {
-    return this.sessionEngine.getSessions()
-  }
-
-  async getMessages(sessionId: string) {
-    this.sessionEngine.getMessages(sessionId)
   }
 
   async ask(message: string, sessionId: string, handlers: StreamHandlers[]): Promise<AskResult> {
@@ -43,16 +35,14 @@ export class Engine {
     return result
   }
 
-  getSession(sessionId: string) {
-    return this.sessionEngine.getSession(sessionId)
-  }
-
   getContextWindow(): number | undefined {
     return this.handler?.contextWindow
   }
 
-  async getModel() {
-    return this.handler.model
+  getModelId(): string {
+    const model = this.handler.model
+    if (typeof model === 'string') return model
+    return (model as { modelId?: string }).modelId ?? 'unknown'
   }
 }
 

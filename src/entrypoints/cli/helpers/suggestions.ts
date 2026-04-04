@@ -4,9 +4,8 @@ import type { Suggestion } from '../components/atoms/SuggestionList'
 export type SuggestionMode = 'command' | 'file' | 'none'
 
 export const COMMANDS: Suggestion[] = [
-  { label: '/help',  hint: 'show help' },
-  { label: '/clear', hint: 'clear conversation' },
-  { label: '/new',   hint: 'start a new session' },
+  { label: '/new',      hint: 'start a new session' },
+  { label: '/sessions', hint: 'switch session' },
 ]
 
 export function detectMode(value: string): SuggestionMode {

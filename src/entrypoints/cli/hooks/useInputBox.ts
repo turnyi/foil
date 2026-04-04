@@ -1,6 +1,7 @@
 import { useState, useEffect } from 'react'
 import { useInput } from 'ink'
-import { useEngineStore } from '../store/engineStore'
+import { useMessageStore } from '../store/messageStore'
+import { useSessionStore } from '../store/sessionStore'
 import {
   detectMode,
   extractQuery,
@@ -17,7 +18,8 @@ export interface InputBoxState {
 }
 
 export function useInputBox(): InputBoxState {
-  const sendMessage = useEngineStore(state => state.sendMessage)
+  const sendMessage = useMessageStore(state => state.sendMessage)
+  const openSessionPicker = useSessionStore(state => state.openSessionPicker)
   const [value, setValue] = useState('')
   const [selectedIndex, setSelectedIndex] = useState(0)
 
@@ -34,7 +36,15 @@ export function useInputBox(): InputBoxState {
       if (key.downArrow) { setSelectedIndex(i => Math.min(suggestions.length - 1, i + 1)); return }
       if (key.return) {
         const chosen = suggestions[selectedIndex]
-        if (chosen) setValue(applySuggestion(value, chosen, mode))
+        if (chosen) {
+          const applied = applySuggestion(value, chosen, mode)
+          if (applied === '/sessions') {
+            openSessionPicker()
+            setValue('')
+          } else {
+            setValue(applied)
+          }
+        }
         return
       }
     } else if (key.return) {

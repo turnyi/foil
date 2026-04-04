@@ -17,7 +17,7 @@ export class MessageService {
     this.log = logger.child('MessageService')
   }
 
-  async create(input: NewMessage): Promise<Message> {
+  async create(input: Omit<NewMessage, 'id' | 'createdAt'>): Promise<Message> {
     this.log.debug('Persisting message', { sessionId: input.sessionId, role: input.role })
     return this.repository.create({
       id: randomUUID(),
@@ -30,7 +30,10 @@ export class MessageService {
     })
   }
 
-  async updateLatest(input: Pick<Message, 'sessionId' | 'role'>): Promise<Message> {
+  async updateLatest(
+    input: Pick<Message, 'sessionId' | 'role'> &
+      Partial<Pick<Message, 'status' | 'content' | 'reasoning'>>,
+  ): Promise<Message> {
     this.log.debug('Persisting message', { sessionId: input.sessionId, role: input.role })
     const messageToUpdate = await this.repository.getLatestByRoleAndSession(
       input.sessionId,

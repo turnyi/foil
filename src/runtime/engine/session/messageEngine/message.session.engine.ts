@@ -23,14 +23,6 @@ export default class MessageSession implements ISessionEngine {
     this.log = logger.child('MessageSession')
   }
 
-  async getSession(id: string): Promise<Session> {
-    return await this.sessionService.getById(id)
-  }
-
-  async getMessages(sessionId: string): Promise<ModelMessage[]> {
-    return this.messageService.getBySession(sessionId)
-  }
-
   async buildContext(promptMessage: ModelMessage, sessionId: string): Promise<ModelMessage[]> {
     const session = await this.sessionService.getById(sessionId)
     if (!session) {
