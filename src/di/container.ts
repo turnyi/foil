@@ -22,24 +22,19 @@ export async function setupContainer(): Promise<typeof container> {
     new URL('../runtime/ai/prompt/system.txt', import.meta.url).pathname,
   ).text()
 
-  // Root logger (each class calls .child('ClassName') to get a scoped instance)
   container.register(TOKEN.Logger, { useValue: createLogger('App') })
 
-  // Runtime value tokens
   container.register(TOKEN.LanguageModel, { useValue: modelConfig.model })
-  container.register(TOKEN.ContextWindow, { useValue: modelConfig.contextWindow })
+  container.register(TOKEN.ContextWindow, { useFactory: () => modelConfig.contextWindow })
   container.register(TOKEN.ToolSet, { useValue: toolsConfig.tools })
   container.register(TOKEN.SystemPrompt, { useValue: systemPrompt })
 
-  // Repositories
   container.registerSingleton(SessionRepository)
   container.registerSingleton(MessageRepository)
 
-  // Services
   container.registerSingleton(SessionService)
   container.registerSingleton(MessageService)
 
-  // Engine layer
   container.registerSingleton(PromptHandler)
   container.registerSingleton(MessageSession)
   container.registerSingleton(Engine)

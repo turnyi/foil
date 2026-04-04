@@ -22,6 +22,20 @@
       "when": 1774996574496,
       "tag": "0002_absurd_junta",
       "breakpoints": true
+    },
+    {
+      "idx": 3,
+      "version": "6",
+      "when": 1775259928708,
+      "tag": "0003_sleepy_kulan_gath",
+      "breakpoints": true
+    },
+    {
+      "idx": 4,
+      "version": "6",
+      "when": 1775260043738,
+      "tag": "0004_ordinary_moon_knight",
+      "breakpoints": true
     }
   ]
 }

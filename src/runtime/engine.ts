@@ -34,7 +34,8 @@ export class Engine {
     )
     this.log.debug('Asking', { messageCount: messages.length })
 
-    const result = await this.handler.ask(messages, handlers)
+    const sessionHandlers = this.sessionEngine.getStreamHandlers(sessionId)
+    const result = await this.handler.ask(messages, [sessionHandlers, ...handlers])
     this.log.debug('Response received', { totalTokens: result.totalTokens })
 
     await this.sessionEngine.appendResponse(result.messages, sessionId)

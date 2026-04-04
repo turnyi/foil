@@ -1,8 +1,8 @@
 import { injectable, inject } from 'tsyringe'
 import { randomUUID } from 'crypto'
-import { SessionRepository } from '../db/repositories/SessionRepository'
+import { SessionRepository } from '../../db/repositories/SessionRepository'
 import { TOKEN } from '../../di/tokens'
-import type { Session } from '../db/schema'
+import type { Session } from '../../db/schema'
 import type { ILogger } from '../../helpers/logger'
 
 export interface CreateSessionInput {

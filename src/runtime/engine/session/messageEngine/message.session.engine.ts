@@ -7,7 +7,7 @@ import PromptHandler from '../../../ai/prompt/promptHandler'
 import { SessionService } from '../../../services/SessionService'
 import { MessageService } from '../../../services/MessageService'
 import { TOKEN } from '../../../../di/tokens'
-import CREATE_TITLE from '../createTitle.txt'
+import CREATE_TITLE from './createTitle.txt'
 import type { StreamHandlers } from '../../../ai/types/streamTypes'
 
 @injectable()
@@ -93,31 +93,31 @@ export default class MessageSession implements ISessionEngine {
         })
       },
       onFinish: async (finishReason: string, totalUsage: unknown) => {
-        await this.messageService.updateLatest({ status: 'finished' })
+        await this.messageService.updateLatest({ sessionId, role: 'assistant', status: 'finished' })
         this.log.debug('Stream finished', { sessionId, finishReason, totalUsage })
       },
       onAbort: async (reason?: string) => {
-        await this.messageService.updateLatest({ status: 'aborted' })
+        await this.messageService.updateLatest({ sessionId, role: 'assistant', status: 'aborted' })
         this.log.warn('Stream aborted', { sessionId, reason })
       },
       onError: async (error: unknown) => {
-        await this.messageService.updateLatest({ status: 'error' })
+        await this.messageService.updateLatest({ sessionId, role: 'assistant', status: 'error' })
         this.log.error('Stream error', { sessionId, error })
       },
       onTextStart: async () => {},
       onText: async (text: string) => {
-        await this.messageService.updateLatest({ content: text })
+        await this.messageService.updateLatest({ sessionId, role: 'assistant', content: text })
       },
       onTextEnd: async () => {
-        await this.messageService.updateLatest({ status: 'finished' })
+        await this.messageService.updateLatest({ sessionId, role: 'assistant', status: 'finished' })
       },
 
       onReasoningStart: async () => {},
       onReasoning: async (text: string) => {
-        await this.messageService.updateLatest({ reasoning: text })
+        await this.messageService.updateLatest({ sessionId, role: 'assistant', reasoning: text })
       },
       onReasoningEnd: async () => {
-        await this.messageService.updateLatest({ status: 'finished' })
+        await this.messageService.updateLatest({ sessionId, role: 'assistant', status: 'finished' })
       },
 
       onToolCall: async (toolName: string, args: unknown) => {

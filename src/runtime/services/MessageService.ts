@@ -30,7 +30,7 @@ export class MessageService {
     })
   }
 
-  async updateLatest(input: Partial<Message>): Promise<Message> {
+  async updateLatest(input: Pick<Message, 'sessionId' | 'role'>): Promise<Message> {
     this.log.debug('Persisting message', { sessionId: input.sessionId, role: input.role })
     const messageToUpdate = await this.repository.getLatestByRoleAndSession(
       input.sessionId,

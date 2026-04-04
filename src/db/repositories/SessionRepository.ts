@@ -25,7 +25,7 @@ export class SessionRepository {
 
   async update(
     id: string,
-    data: Partial<Pick<Session, "name" | "modelId" | "summary" | "metadata" | "totalTokens">>,
+    data: Partial<Pick<Session, "name" | "summary" | "metadata" | "totalTokens">>,
   ): Promise<Session | null> {
     const updated = await db
       .update(sessions)
