@@ -118,30 +118,9 @@ export default class MessageSession implements ISessionEngine {
         await this.messageService.updateLatest({ sessionId, role: 'assistant', status: 'finished' })
       },
 
-      onToolCall: async (toolName: string, args: unknown) => {
-        await this.messageService.create({
-          sessionId,
-          role: 'tool',
-          content: { toolName, args },
-          status: 'finished',
-        })
-      },
-      onToolResult: async (toolName: string, result: unknown) => {
-        await this.messageService.create({
-          sessionId,
-          role: 'tool',
-          content: { toolName, result },
-          status: 'finished',
-        })
-      },
-      onToolError: async (toolName: string, error: unknown) => {
-        await this.messageService.create({
-          sessionId,
-          role: 'tool',
-          content: { toolName, error },
-          status: 'error',
-        })
-      },
+      onToolCall: async () => {},
+      onToolResult: async () => {},
+      onToolError: async () => {},
     }
   }
 }
