@@ -16,25 +16,59 @@ interface MessageStore {
   sendMessage: (text: string) => Promise<void>
 }
 
-function dbToDisplay(msg: Message): DisplayMessage {
+type ContentPart = { type: string; text?: string; toolName?: string; [key: string]: unknown }
+
+function extractText(content: unknown): string {
+  if (typeof content === 'string') return content
+  if (Array.isArray(content)) {
+    return (content as ContentPart[])
+      .filter(p => p.type === 'text')
+      .map(p => p.text ?? '')
+      .join('')
+  }
+  return ''
+}
+
+function extractToolName(content: unknown): string {
+  if (!content || typeof content !== 'object') return 'tool'
+  if (Array.isArray(content)) {
+    const first = (content as ContentPart[])[0]
+    return (first?.toolName as string) ?? 'tool'
+  }
+  return ((content as Record<string, unknown>).toolName as string) ?? 'tool'
+}
+
+function extractToolArgs(content: unknown): Record<string, unknown> | undefined {
+  if (!content || typeof content !== 'object') return undefined
+  if (Array.isArray(content)) {
+    const first = (content as ContentPart[])[0]
+    const args = first?.args ?? first?.input
+    return args && typeof args === 'object' ? args as Record<string, unknown> : undefined
+  }
+  const c = content as Record<string, unknown>
+  const args = c.args ?? c.input
+  return args && typeof args === 'object' ? args as Record<string, unknown> : undefined
+}
+
+function dbToDisplay(msg: Message): DisplayMessage | null {
   if (msg.role === 'user') {
-    return {
-      id: msg.id,
-      type: 'user',
-      content: typeof msg.content === 'string' ? msg.content : JSON.stringify(msg.content),
-    }
+    return { id: msg.id, type: 'user', content: extractText(msg.content) }
   }
   if (msg.role === 'tool') {
-    const c = msg.content as Record<string, unknown> | null
-    return { id: msg.id, type: 'tool', name: (c?.toolName as string) ?? 'tool', status: 'done' }
+    return {
+      id: msg.id,
+      type: 'tool',
+      name: extractToolName(msg.content),
+      args: extractToolArgs(msg.content),
+      status: 'done',
+    }
   }
-  return {
-    id: msg.id,
-    type: 'assistant',
-    content: typeof msg.content === 'string' ? msg.content : JSON.stringify(msg.content),
-    streaming: false,
-    tokens: msg.tokens ?? undefined,
+  if (msg.role === 'assistant') {
+    const text = extractText(msg.content)
+    if (!text) return null  // pure tool-call assistant turns, no text to show
+    return { id: msg.id, type: 'assistant', content: text, streaming: false, tokens: msg.tokens ?? undefined }
   }
+  return null
 }
 
 export const useMessageStore = create<MessageStore>((set, get) => ({
@@ -45,7 +79,7 @@ export const useMessageStore = create<MessageStore>((set, get) => ({
   loadMessages: async (sessionId) => {
     const repo = container.resolve(MessageRepository)
     const msgs = await repo.getBySession(sessionId)
-    set({ messages: msgs.map(dbToDisplay) })
+    set({ messages: msgs.map(dbToDisplay).filter((m): m is DisplayMessage => m !== null) })
   },
 
   sendMessage: async (text) => {
@@ -75,13 +109,21 @@ export const useMessageStore = create<MessageStore>((set, get) => ({
         }))
       },
 
-      onToolCall: async toolName => {
-        set(state => ({
-          messages: [
-            ...state.messages,
-            { id: randomUUID(), type: 'tool', name: toolName, status: 'running' as const },
-          ],
-        }))
+      onToolCall: async (toolName, args) => {
+        set(state => {
+          const toolMsg = {
+            id: randomUUID(),
+            type: 'tool' as const,
+            name: toolName,
+            status: 'running' as const,
+            args: args && typeof args === 'object' ? args as Record<string, unknown> : undefined,
+          }
+          const assistantIdx = state.messages.findIndex(m => m.id === assistantId)
+          if (assistantIdx === -1) return { messages: [...state.messages, toolMsg] }
+          const msgs = [...state.messages]
+          msgs.splice(assistantIdx, 0, toolMsg)
+          return { messages: msgs }
+        })
       },
 
       onToolResult: async toolName => {
@@ -100,15 +142,15 @@ export const useMessageStore = create<MessageStore>((set, get) => ({
       },
 
       onFinish: async (_reason: string, totalUsage: unknown) => {
-        const usage = totalUsage as { promptTokens?: number; completionTokens?: number } | null
+        const usage = totalUsage as { inputTokens?: number; outputTokens?: number } | null
         set(state => ({
           messages: state.messages.map(m =>
             m.id === assistantId && m.type === 'assistant'
-              ? { ...m, streaming: false, tokens: usage?.completionTokens }
+              ? { ...m, streaming: false, tokens: usage?.outputTokens }
               : m,
           ),
           isStreaming: false,
-          contextUsage: usage?.promptTokens ?? state.contextUsage,
+          contextUsage: usage?.inputTokens ?? state.contextUsage,
         }))
       },
 

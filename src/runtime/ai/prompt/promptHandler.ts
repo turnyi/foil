@@ -50,11 +50,8 @@ class PromptHandler {
       }
     }
 
-    const [text, usage, response] = await Promise.all([
-      stream.text,
-      stream.totalUsage,
-      stream.response,
-    ])
+    const [usage, response] = await Promise.all([stream.totalUsage, stream.response])
+    const text = await Promise.resolve(stream.text).catch(() => '')
     const consumedTokens = usage.totalTokens ?? (usage.inputTokens ?? 0) + (usage.outputTokens ?? 0)
     const contextUsagePercent = this.contextWindow
       ? Math.round((consumedTokens / this.contextWindow) * 10000) / 100

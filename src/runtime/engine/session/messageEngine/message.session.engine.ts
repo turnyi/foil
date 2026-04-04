@@ -85,12 +85,12 @@ export default class MessageSession implements ISessionEngine {
         })
       },
       onFinish: async (finishReason: string, totalUsage: unknown) => {
-        const usage = totalUsage as { completionTokens?: number } | null
+        const usage = totalUsage as { outputTokens?: number } | null
         await this.messageService.updateLatest({
           sessionId,
           role: 'assistant',
           status: 'finished',
-          tokens: usage?.completionTokens ?? null,
+          tokens: usage?.outputTokens ?? null,
         })
         this.log.debug('Stream finished', { sessionId, finishReason, totalUsage })
       },

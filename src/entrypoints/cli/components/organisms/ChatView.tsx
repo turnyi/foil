@@ -12,7 +12,7 @@ export default function ChatView() {
   const messages = useMessageStore(state => state.messages)
 
   return (
-    <Box flexDirection="column" width={columns} height={rows - 2} paddingX={2}>
+    <Box flexDirection="column" width={columns - 2} height={rows - 2} paddingX={2} paddingY={2}>
       <Box flexDirection="column" flexGrow={1}>
         {messages.map(msg => (
           <MessageBubble key={msg.id} message={msg} />

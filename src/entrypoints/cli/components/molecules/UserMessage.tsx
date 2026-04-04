@@ -6,8 +6,18 @@ type Props = { message: Extract<DisplayMessage, { type: 'user' }> }
 
 export default function UserMessage({ message }: Props) {
   return (
-    <Box gap={2} marginBottom={1}>
-      <Text color="cyan" bold>you</Text>
+    <Box
+      marginBottom={1}
+      paddingX={2}
+      paddingY={1}
+      backgroundColor="#111111"
+      borderStyle="bold"
+      borderLeft={true}
+      borderTop={false}
+      borderRight={false}
+      borderBottom={false}
+      borderColor="cyan"
+    >
       <Text>{message.content}</Text>
     </Box>
   )
