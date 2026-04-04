@@ -50,6 +50,16 @@ function extractToolArgs(content: unknown): Record<string, unknown> | undefined 
   return args && typeof args === 'object' ? args as Record<string, unknown> : undefined
 }
 
+function extractToolResult(content: unknown): unknown {
+  if (!content || typeof content !== 'object') return undefined
+  if (Array.isArray(content)) {
+    const first = (content as ContentPart[])[0]
+    return first?.result ?? first?.output
+  }
+  const c = content as Record<string, unknown>
+  return c.result ?? c.output
+}
+
 function dbToDisplay(msg: Message): DisplayMessage | null {
   if (msg.role === 'user') {
     return { id: msg.id, type: 'user', content: extractText(msg.content) }
@@ -60,13 +70,15 @@ function dbToDisplay(msg: Message): DisplayMessage | null {
       type: 'tool',
       name: extractToolName(msg.content),
       args: extractToolArgs(msg.content),
+      result: extractToolResult(msg.content),
       status: 'done',
     }
   }
   if (msg.role === 'assistant') {
     const text = extractText(msg.content)
     if (!text) return null  // pure tool-call assistant turns, no text to show
-    return { id: msg.id, type: 'assistant', content: text, streaming: false, tokens: msg.tokens ?? undefined }
+    const reasoning = msg.reasoning ? extractText(msg.reasoning) : undefined
+    return { id: msg.id, type: 'assistant', content: text, reasoning, streaming: false, tokens: msg.tokens ?? undefined }
   }
   return null
 }
@@ -99,6 +111,16 @@ export const useMessageStore = create<MessageStore>((set, get) => ({
     const sessionId = await useSessionStore.getState().ensureSession(text.slice(0, 60))
 
     const handlers: StreamHandlers = {
+      onReasoning: async chunk => {
+        set(state => ({
+          messages: state.messages.map(m =>
+            m.id === assistantId && m.type === 'assistant'
+              ? { ...m, reasoning: (m.reasoning ?? '') + chunk }
+              : m,
+          ),
+        }))
+      },
+
       onText: async chunk => {
         set(state => ({
           messages: state.messages.map(m =>
@@ -126,7 +148,7 @@ export const useMessageStore = create<MessageStore>((set, get) => ({
         })
       },
 
-      onToolResult: async toolName => {
+      onToolResult: async (toolName, result) => {
         set(state => {
           const idx = [...state.messages]
             .reverse()
@@ -135,7 +157,7 @@ export const useMessageStore = create<MessageStore>((set, get) => ({
           const real = state.messages.length - 1 - idx
           return {
             messages: state.messages.map((m, i) =>
-              i === real && m.type === 'tool' ? { ...m, status: 'done' as const } : m,
+              i === real && m.type === 'tool' ? { ...m, status: 'done' as const, result } : m,
             ),
           }
         })

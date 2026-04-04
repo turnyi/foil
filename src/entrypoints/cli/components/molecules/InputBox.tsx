@@ -6,9 +6,10 @@ import TextInput from '../atoms/TextInput'
 
 interface Props {
   value: string
+  width?: number
 }
 
-export default function InputBox({ value }: Props) {
+export default function InputBox({ value, width = 64 }: Props) {
   const modelName = useEngineStore(state => state.modelName)
   const contextWindow = useEngineStore(state => state.contextWindow)
   const contextUsage = useMessageStore(state => state.contextUsage)
@@ -20,7 +21,7 @@ export default function InputBox({ value }: Props) {
   return (
     <Box
       flexDirection="column"
-      width={64}
+      width={width}
       paddingX={2}
       paddingY={1}
       borderStyle="bold"

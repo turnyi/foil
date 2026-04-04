@@ -13,12 +13,12 @@ export default function PromptInput() {
   return (
     <Box
       flexDirection="column"
-      width={64}
+      width={100}
       height={INPUT_BOX_HEIGHT + SUGGESTION_LIST_HEIGHT}
       justifyContent="flex-end"
     >
       {open && <SuggestionList items={suggestions} selectedIndex={selectedIndex} />}
-      <InputBox value={value} />
+      <InputBox value={value} width={100} />
     </Box>
   )
 }
