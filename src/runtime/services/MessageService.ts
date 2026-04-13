@@ -53,7 +53,9 @@ export class MessageService {
   async getBySession(sessionId: string): Promise<ModelMessage[]> {
     const messages = await this.repository.getBySession(sessionId)
     this.log.debug('Loaded messages for session', { sessionId, count: messages.length })
-    return messages.map(this.convertToModelMessage)
+    return messages
+      .map(msg => this.convertToModelMessage(msg))
+      .filter((m): m is ModelMessage => m !== null)
   }
 
   async delete(id: string): Promise<void> {
@@ -66,12 +68,10 @@ export class MessageService {
     return this.repository.deleteBySession(sessionId)
   }
 
-  private convertToModelMessage(msg: Message): ModelMessage {
+  private convertToModelMessage(msg: Message): ModelMessage | null {
     if (msg.role === 'tool') {
-      return {
-        role: 'tool',
-        content: msg.content as never,
-      }
+      if (!Array.isArray(msg.content)) return null
+      return { role: 'tool', content: msg.content as never }
     }
     if (msg.role === 'assistant') {
       return { role: 'assistant', content: msg.content as never }

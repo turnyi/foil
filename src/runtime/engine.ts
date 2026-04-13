@@ -30,8 +30,6 @@ export class Engine {
     const result = await this.handler.ask(messages, [sessionHandlers, ...handlers])
     this.log.debug('Response received', { totalTokens: result.totalTokens })
 
-    await this.sessionEngine.appendResponse(result.messages, sessionId)
-
     return result
   }
 

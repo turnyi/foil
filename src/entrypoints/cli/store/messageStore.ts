@@ -131,7 +131,7 @@ export const useMessageStore = create<MessageStore>((set, get) => ({
         }))
       },
 
-      onToolCall: async (toolName, args) => {
+      onToolCall: async (_toolCallId, toolName, args) => {
         set(state => {
           const toolMsg = {
             id: randomUUID(),
@@ -148,7 +148,7 @@ export const useMessageStore = create<MessageStore>((set, get) => ({
         })
       },
 
-      onToolResult: async (toolName, result) => {
+      onToolResult: async (_toolCallId, toolName, result) => {
         set(state => {
           const idx = [...state.messages]
             .reverse()

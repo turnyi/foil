@@ -41,9 +41,9 @@ export interface StreamHandlers {
   onReasoning?: (text: string) => Promise<void>
   onReasoningStart?: () => Promise<void>
   onReasoningEnd?: () => Promise<void>
-  onToolCall?: (toolName: string, args: unknown) => Promise<void>
-  onToolResult?: (toolName: string, result: unknown) => void
-  onToolError?: (toolName: string, error: unknown) => Promise<void>
+  onToolCall?: (toolCallId: string, toolName: string, args: unknown) => Promise<void>
+  onToolResult?: (toolCallId: string, toolName: string, result: unknown) => Promise<void>
+  onToolError?: (toolCallId: string, toolName: string, error: unknown) => Promise<void>
   onToolInputStart?: (toolName: string) => Promise<void>
   onToolInputDelta?: (toolName: string, delta: string) => Promise<void>
   onToolInputEnd?: (toolName: string) => Promise<void>

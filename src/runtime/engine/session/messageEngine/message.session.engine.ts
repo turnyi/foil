@@ -44,24 +44,6 @@ export default class MessageSession implements ISessionEngine {
     return this.messageService.getBySession(sessionId)
   }
 
-  async appendResponse(messages: ModelMessage[], sessionId: string): Promise<void> {
-    this.log.debug('Persisting response', {
-      sessionId: sessionId,
-      count: messages.length,
-    })
-    for (const msg of messages) {
-      await this.messageService.create({
-        sessionId,
-        role: msg.role,
-        content: msg.content,
-      })
-    }
-  }
-
-  async getSessions(): Promise<Session[]> {
-    return this.sessionService.getAll()
-  }
-
   async createSession(promptMessage: ModelMessage): Promise<Session> {
     this.log.info('Creating session', promptMessage)
     const { text } = await this.promptHandler.ask([
@@ -75,13 +57,64 @@ export default class MessageSession implements ISessionEngine {
   }
 
   public getStreamHandlers(sessionId: string): StreamHandlers {
+    type ToolCallPart = { type: 'tool-call'; toolCallId: string; toolName: string; args: unknown }
+    let stepText = ''
+    let stepReasoning = ''
+    let stepToolCalls: ToolCallPart[] = []
+
     return {
-      onStart: async () => {
+      onStepStart: async () => {
+        stepText = ''
+        stepReasoning = ''
+        stepToolCalls = []
         await this.messageService.create({
           sessionId,
           role: 'assistant',
           content: '',
           status: 'active',
+        })
+      },
+      onText: async (delta: string) => {
+        stepText += delta
+        await this.messageService.updateLatest({ sessionId, role: 'assistant', content: stepText })
+      },
+      onReasoning: async (delta: string) => {
+        stepReasoning += delta
+        await this.messageService.updateLatest({
+          sessionId,
+          role: 'assistant',
+          reasoning: stepReasoning,
+        })
+      },
+      onToolCall: async (toolCallId: string, toolName: string, args: unknown) => {
+        stepToolCalls.push({ type: 'tool-call', toolCallId, toolName, args })
+      },
+      onStepFinish: async () => {
+        const content =
+          stepToolCalls.length > 0
+            ? [...(stepText ? [{ type: 'text' as const, text: stepText }] : []), ...stepToolCalls]
+            : stepText
+        await this.messageService.updateLatest({
+          sessionId,
+          role: 'assistant',
+          content,
+          status: 'finished',
+        })
+      },
+      onToolResult: async (toolCallId: string, toolName: string, result: unknown) => {
+        await this.messageService.create({
+          sessionId,
+          role: 'tool',
+          content: [{ type: 'tool-result', toolCallId, toolName, result }],
+          status: 'finished',
+        })
+      },
+      onToolError: async (toolCallId: string, toolName: string, error: unknown) => {
+        await this.messageService.create({
+          sessionId,
+          role: 'tool',
+          content: [{ type: 'tool-result', toolCallId, toolName, result: error, isError: true }],
+          status: 'error',
         })
       },
       onFinish: async (finishReason: string, totalUsage: unknown) => {
@@ -102,25 +135,6 @@ export default class MessageSession implements ISessionEngine {
         await this.messageService.updateLatest({ sessionId, role: 'assistant', status: 'error' })
         this.log.error('Stream error', { sessionId, error })
       },
-      onTextStart: async () => {},
-      onText: async (text: string) => {
-        await this.messageService.updateLatest({ sessionId, role: 'assistant', content: text })
-      },
-      onTextEnd: async () => {
-        await this.messageService.updateLatest({ sessionId, role: 'assistant', status: 'finished' })
-      },
-
-      onReasoningStart: async () => {},
-      onReasoning: async (text: string) => {
-        await this.messageService.updateLatest({ sessionId, role: 'assistant', reasoning: text })
-      },
-      onReasoningEnd: async () => {
-        await this.messageService.updateLatest({ sessionId, role: 'assistant', status: 'finished' })
-      },
-
-      onToolCall: async () => {},
-      onToolResult: async () => {},
-      onToolError: async () => {},
     }
   }
 }

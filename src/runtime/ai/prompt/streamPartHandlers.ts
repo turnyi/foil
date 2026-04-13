@@ -9,9 +9,9 @@ const streamPartHandlers: Partial<Record<StreamPartType, (part: any, h: StreamHa
     [StreamPartType.ReasoningDelta]: (p, h) => h.onReasoning?.(p.text),
     [StreamPartType.ReasoningStart]: (_, h) => h.onReasoningStart?.(),
     [StreamPartType.ReasoningEnd]: (_, h) => h.onReasoningEnd?.(),
-    [StreamPartType.ToolCall]: (p, h) => h.onToolCall?.(p.toolName, p.args ?? p.input),
-    [StreamPartType.ToolResult]: (p, h) => h.onToolResult?.(p.toolName, p.result ?? p.output),
-    [StreamPartType.ToolError]: (p, h) => h.onToolError?.(p.toolName, p.error),
+    [StreamPartType.ToolCall]: (p, h) => h.onToolCall?.(p.toolCallId, p.toolName, p.args ?? p.input),
+    [StreamPartType.ToolResult]: (p, h) => h.onToolResult?.(p.toolCallId, p.toolName, p.result ?? p.output),
+    [StreamPartType.ToolError]: (p, h) => h.onToolError?.(p.toolCallId, p.toolName, p.error),
     [StreamPartType.ToolInputStart]: (p, h) => h.onToolInputStart?.(p.toolName),
     [StreamPartType.ToolInputDelta]: (p, h) => h.onToolInputDelta?.(p.toolName, p.inputTextDelta), //TODO
     [StreamPartType.ToolInputEnd]: (p, h) => h.onToolInputEnd?.(p.toolName),
